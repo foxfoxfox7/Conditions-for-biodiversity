@@ -1,3 +1,5 @@
 scrap
 data
 docs
+__pycache__
+testing.py

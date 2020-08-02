@@ -58,7 +58,8 @@ def whole_clean(df):
     df_obj = df.select_dtypes(['object'])
     df[df_obj.columns] = df_obj.apply(lambda x: x.str.strip())
 
-    destring_strings = ['landuse', 'slopeform', 'scode', 'slope', 'aspect', 'altitude']
+    destring_strings = ['landuse', 'slopeform', 'scode', 'slope',
+     'aspect', 'altitude']
     destring_cols = _get_list(df, destring_strings)
     for col in destring_cols:
         for i in df[col].iteritems():
@@ -105,7 +106,8 @@ def whole_to_ml(df):
 
     restring_strings = ['code']
     restring_cols = _get_list(df, restring_strings)
-    whole2 = pd.DataFrame({col:str(col)+'=' for col in df}, index=df.index) + df.astype(str)
+    whole2 = pd.DataFrame({col:str(col)+'=' for col in df},
+     index=df.index) + df.astype(str)
     df = df.drop(restring_cols, axis = 1)
     for col in restring_cols:
         df[col] = whole2[col]
@@ -138,12 +140,11 @@ def species_clean(df):
     df = df.dropna(how='all', axis = 1)
     df = df.dropna(how='all', axis = 0)
 
+    df = df.rename(columns=lambda x: x.strip())
+
     df["PLOT_ID"] = df["PLOT_ID"].astype(str)
 
     df = df.replace(r'^\s*$', np.NaN, regex=True)
-
-    df_obj = df.select_dtypes(['object'])
-    df[df_obj.columns] = df_obj.apply(lambda x: x.str.strip())
 
     df = df[df['DESC_LATIN'] != 'Unidentified']
 
@@ -156,12 +157,10 @@ def species_clean(df):
     for col in destring_cols:
         for i in df[col].iteritems():
             if isinstance(i[1], str):
-                print(df.loc[i[0], col], '!!!!!!!!!!!!!!!!!!!!!!!')
                 if any(map(str.isdigit, i[1])):
                     df.loc[i[0], col] = re.search(r'\d+', i[1]).group()
                 else:
                     df.loc[i[0], col] = np.NaN
-                print(df.loc[i[0], col], '!!!!!!!!!!!!!!!!!!!!!!!')
         df[col] = df[col].astype(float)
 
     median_str = ['percent', 'frequency']
@@ -169,32 +168,37 @@ def species_clean(df):
     for col in median_cols:
         df[col] = df[col].fillna(df[col].median())
 
+    df_obj = df.select_dtypes(['object'])
+    df[df_obj.columns] = df_obj.apply(lambda x: x.str.strip())
+
     df = df.dropna()
 
     return df
 
-def get_abund_and_freq(df):
+def get_abund_and_freq(df, column):
 
     df_dict = {num: df.loc[df['PLOT_ID'] == num] for num in df['PLOT_ID']}
-    abundance_plots = []
+    cover_plots = []
     frequency_plots = []
     for key in df_dict.keys():
-        df_dict[key] = df_dict[key].drop_duplicates(subset=['DESC_LATIN'], keep='first')
+        df_dict[key] = df_dict[key].drop_duplicates(subset=[column], keep='first')
 
         abund_inst = pd.DataFrame()
-        abund_inst = df_dict[key].pivot(index = 'PLOT_ID', columns = 'DESC_LATIN', values = 'PERCENT_COVER')
-        abundance_plots.append(abund_inst)
+        abund_inst = df_dict[key].pivot(index = 'PLOT_ID', columns = column,
+         values = 'PERCENT_COVER')
+        cover_plots.append(abund_inst)
 
         freq_inst = pd.DataFrame()
-        freq_inst = df_dict[key].pivot(index = 'PLOT_ID', columns = 'DESC_LATIN', values = 'FREQUENCY')
+        freq_inst = df_dict[key].pivot(index = 'PLOT_ID', columns = column,
+         values = 'FREQUENCY')
         frequency_plots.append(freq_inst)
 
-    df_abund = pd.concat(abundance_plots, axis=1)
+    df_abund = pd.concat(cover_plots, axis=1)
     df_abund = df_abund.groupby(level=0, axis=1).sum()
-    df_abund = df_abund.reset_index()#.rename(columns={df.index.name:'PLOT_ID'})
+    df_abund = df_abund.reset_index()
     df_freq = pd.concat(frequency_plots, axis=1)
     df_freq = df_freq.groupby(level=0, axis=1).sum()
-    df_freq = df_freq.reset_index()#.rename(columns={df.index.name:'PLOT_ID'})
+    df_freq = df_freq.reset_index()
 
     return df_abund, df_freq
 
@@ -216,29 +220,122 @@ def get_abund_and_freq(df):
 #ground = xls.parse('Ground Features')
 
 
+def ground_clean(df):
 
-for nn, ss in enumerate(surveys[10:20]):
+    df = df[df['PLOT_ID'].notna()]
+    df = df.dropna(how='all', axis = 1)
+    df = df.dropna(how='all', axis = 0)
+
+    if 'FREQUENCY' not in df:
+        df['FREQUENCY'] = df['PERCENT_COVER'] / 4
+
+    df = df.rename(columns=lambda x: x.strip())
+    df["PLOT_ID"] = df["PLOT_ID"].astype(str)
+    df['FEATURE'] = df['FEATURE'].apply(lambda x: x.strip())
+
+    df_other = df[df['FEATURE'].str.lower() != 'vegetation height']
+
+    g_cover, g_frequency = get_abund_and_freq(df_other, column='FEATURE')
+
+    df_height = df[df['FEATURE'].str.lower() == 'vegetation height']
+
+    destring_cols = _get_list(df_height, ['cell'])
+    for col in destring_cols:
+        if df_height[col].dtype == object:
+            df_height[col] = df_height[col].replace({"<1m": 100.0,
+                                '>100': 100.0,
+                                 "*": np.NaN,
+                                 'xz': np.NaN,
+                                 'DW': np.NaN,
+                                 'dw': np.NaN,
+                                 '.': np.NaN,
+                                 '27.5.': 27.5,
+                                 '`13': 13.0,
+                                 '>55': 55.0,
+                                 'Tree': 100.0,
+                                 'Tree 1': 100.0,
+                                 '4..5': 4.5,
+                                 '7,5': 7.5,
+                                 'Hole': np.NaN})
+            df_height[col] = df_height[col].astype(float)
+        else:
+            pass
+
+    try:
+        df_height['max_height'] = df_height.loc[:, 'CELL_1':'CELL_25'].max(1)
+        df_height['median_height'] = df_height.loc[:, 'CELL_1':'CELL_25'].median(1)
+    except:
+        df_height['max_height'] = np.NaN
+        df_height['median_height'] = np.NaN
+
+
+    median_str = ['median_height', 'max_height']
+    for col in median_str:
+        df_height[col] = df_height[col].fillna(df_height[col].median())
+
+    df_height = df_height[df_height.duplicated('PLOT_ID', keep='first') == False]
+
+    remove_strings = ['percent', 'freq', 'data', 'cell', 'feature', 'site',
+        'code', 'year', 'qa']
+    remove_cols = _get_list(df_height, remove_strings)
+    df_height = df_height.drop(remove_cols, axis = 1)
+
+    df_base = pd.DataFrame()
+    base_strings = ['sitec', 'mcode', 'plot_']
+    base_cols = _get_list(df, base_strings)
+    for col in base_cols:
+        df_base[col] = df[col]
+    df_base = df_base[df_base.duplicated('PLOT_ID', keep='first') == False]
+
+    df_base = df_base.set_index('PLOT_ID')
+    df_height = df_height.set_index('PLOT_ID')
+    g_cover = g_cover.set_index('index')
+    g_frequency = g_frequency.set_index('index')
+
+    g_cover = g_cover.add_prefix('cover-')
+    g_frequency = g_frequency.add_prefix('freq-')
+
+    df_final = pd.concat((df_base, df_height, g_frequency, g_cover), axis = 1)
+
+    df_final['PLOT_ID'] = df_final.index
+
+    median_cols = _get_list(df_final, ['height'])
+    for col in median_cols:
+        df_final[col] = df_final[col].fillna(df_final[col].median())
+    zero_cols = _get_list(df_final, ['freq', 'cover'])
+    for col in zero_cols:
+        df_final[col] = df_final[col].fillna(0)
+
+    return df_final
+
+
+
+
+
+
+
+
+for nn, ss in enumerate(surveys[71:]):
     print('\n\n\n', nn, '\n\n\n', ss, '\n\n\n')
     xls = pd.ExcelFile(ss)
-    #whole = xls.parse('Whole Plot Data')
+
+    for name in xls.sheet_names:
+        if 'whole' in name.lower():
+            wpd_string = name
+        if 'species te' in name.lower():
+            spec_temp_string = name
+        if 'ground' in name.lower():
+            ground_string = name
+
+    #whole = xls.parse(wpd_string)
     #whole = whole_clean(whole)
-    #print(whole.info())
     #whole = whole_to_ml(whole)
-    #print(whole.info())
-    species = xls.parse('Species Template')
-    species = species_clean(species)
-    abundance, frequency = get_abund_and_freq(species)
-    print(abundance.info())
-    print(frequency.info())
 
+    #species = xls.parse(spec_temp_string)
+    #species = species_clean(species)
+    #cover, frequency = get_abund_and_freq(species, column='DESC_LATIN')
 
-
-#whole = whole_to_ml(whole)
-
-#species = species_clean(species)
-#abundance, frequency = get_abund_and_freq(species)
-
-#print(whole.head())
-#print(abundance.head())
-#print(frequency.head())
+    ground = xls.parse(ground_string)
+    ground = ground_clean(ground)
+    print(ground)
 
