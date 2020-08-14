@@ -2,6 +2,11 @@ import pickle
 import re
 import pandas as pd
 import numpy as np
+import fuzzywuzzy
+from fuzzywuzzy import process
+
+import warnings
+warnings.filterwarnings('ignore')
 
 
 with open("./data/file_list", "rb") as fp:
@@ -35,9 +40,8 @@ def _destring_plot_id(df):
             if 'control' in i[1].lower():
                 num_list = [int(nn) for nn in i[1].split() if nn.isdigit()]
                 df.loc[i[0], 'PLOT_ID'] = num_list[-1] + 100
-            print(df.loc[i[0], 'PLOT_ID'])
-            df.loc[i[0], 'PLOT_ID'] = re.sub("[^0-9]", "", df.loc[i[0], 'PLOT_ID'])
-            print(df.loc[i[0], 'PLOT_ID'])
+            df.loc[i[0], 'PLOT_ID'] = re.sub("[^0-9]", "", df.loc[i[0],
+                                                             'PLOT_ID'])
 
     df["PLOT_ID"] = df["PLOT_ID"].astype(float)
 
@@ -64,18 +68,18 @@ def whole_clean(df):
     for col in destring_cols:
         for i in df[col].iteritems():
             if isinstance(i[1], str):
-                print(df.loc[i[0], col], '!!!!!!!!!!!!!!!!!!!!!!!')
                 if any(map(str.isdigit, i[1])):
                     df.loc[i[0], col] = re.search(r'\d+', i[1]).group()
                 else:
                     df.loc[i[0], col] = np.NaN
-                print(df.loc[i[0], col], '!!!!!!!!!!!!!!!!!!!!!!!')
         df[col] = df[col].astype(float)
 
     median_str = ['aspect', 'altitude', 'eastings', 'northings', 'slope']
     median_cols = _get_list(df, median_str, not_list=['slopeform'])
     for col in median_cols:
         df[col] = df[col].fillna(df[col].median())
+
+    df = df.set_index('PLOT_ID')
 
     return df
 
@@ -181,44 +185,27 @@ def get_abund_and_freq(df, column):
     cover_plots = []
     frequency_plots = []
     for key in df_dict.keys():
-        df_dict[key] = df_dict[key].drop_duplicates(subset=[column], keep='first')
+        df_dict[key] = df_dict[key].drop_duplicates(subset=[column],
+                                                          keep='first')
 
         abund_inst = pd.DataFrame()
         abund_inst = df_dict[key].pivot(index = 'PLOT_ID', columns = column,
-         values = 'PERCENT_COVER')
+                                                     values = 'PERCENT_COVER')
         cover_plots.append(abund_inst)
 
         freq_inst = pd.DataFrame()
         freq_inst = df_dict[key].pivot(index = 'PLOT_ID', columns = column,
-         values = 'FREQUENCY')
+                                                         values = 'FREQUENCY')
         frequency_plots.append(freq_inst)
 
     df_abund = pd.concat(cover_plots, axis=1)
     df_abund = df_abund.groupby(level=0, axis=1).sum()
-    df_abund = df_abund.reset_index()
+    #df_abund = df_abund.reset_index()
     df_freq = pd.concat(frequency_plots, axis=1)
     df_freq = df_freq.groupby(level=0, axis=1).sum()
-    df_freq = df_freq.reset_index()
+    #df_freq = df_freq.reset_index()
 
     return df_abund, df_freq
-
-
-#site_name = 'braunton'
-#site_files = []
-#for file_name in surveys:
-#    if site_name.lower() in file_name.lower():
-#        site_files.append(file_name)
-#print(site_files)
-#print(site_files[-1])
-
-#xls = pd.ExcelFile(site_files[-1])
-#s_names = xls.sheet_names
-#print(s_names)
-
-#whole = xls.parse('Whole Plot Data')
-#species = xls.parse('Species Template')
-#ground = xls.parse('Ground Features')
-
 
 def ground_clean(df):
 
@@ -263,7 +250,8 @@ def ground_clean(df):
 
     try:
         df_height['max_height'] = df_height.loc[:, 'CELL_1':'CELL_25'].max(1)
-        df_height['median_height'] = df_height.loc[:, 'CELL_1':'CELL_25'].median(1)
+        df_height['median_height'] =\
+                                 df_height.loc[:, 'CELL_1':'CELL_25'].median(1)
     except:
         df_height['max_height'] = np.NaN
         df_height['median_height'] = np.NaN
@@ -273,7 +261,8 @@ def ground_clean(df):
     for col in median_str:
         df_height[col] = df_height[col].fillna(df_height[col].median())
 
-    df_height = df_height[df_height.duplicated('PLOT_ID', keep='first') == False]
+    df_height = df_height[df_height.duplicated('PLOT_ID',
+                                                        keep='first') == False]
 
     remove_strings = ['percent', 'freq', 'data', 'cell', 'feature', 'site',
         'code', 'year', 'qa']
@@ -289,8 +278,8 @@ def ground_clean(df):
 
     df_base = df_base.set_index('PLOT_ID')
     df_height = df_height.set_index('PLOT_ID')
-    g_cover = g_cover.set_index('index')
-    g_frequency = g_frequency.set_index('index')
+    #g_cover = g_cover.set_index('index')
+    #g_frequency = g_frequency.set_index('index')
 
     g_cover = g_cover.add_prefix('cover-')
     g_frequency = g_frequency.add_prefix('freq-')
@@ -308,34 +297,50 @@ def ground_clean(df):
 
     return df_final
 
+'''
+Getting the survey data for a specific site
+'''
+
+#site_name = 'braunton'
+#site_files = []
+#for file_name in surveys:
+#    if site_name.lower() in file_name.lower():
+#        site_files.append(file_name)
+#print(site_files)
+#print(site_files[-1])
+
+#xls = pd.ExcelFile(site_files[-1])
+#s_names = xls.sheet_names
+#print(s_names)
+
+#whole = xls.parse('Whole Plot Data')
+#species = xls.parse('Species Template')
+#ground = xls.parse('Ground Features')
 
 
+'''
+Getting all survery data
+'''
 
+#for nn, ss in enumerate(surveys):
+#    print('\n\n\n', nn, '\n\n\n', ss, '\n\n\n')
+#    xls = pd.ExcelFile(ss)
 
+#    for name in xls.sheet_names:
+#        if 'whole' in name.lower():
+#            wpd_string = name
+#        if 'species te' in name.lower():
+#            spec_temp_string = name
+#        if 'ground' in name.lower():
+#            ground_string = name
 
+#    whole = xls.parse(wpd_string)
+#    whole = whole_clean(whole)
+#    whole = whole_to_ml(whole)
 
+#    species = xls.parse(spec_temp_string)
+#    species = species_clean(species)
+#    cover, frequency = get_abund_and_freq(species, column='DESC_LATIN')
 
-for nn, ss in enumerate(surveys[71:]):
-    print('\n\n\n', nn, '\n\n\n', ss, '\n\n\n')
-    xls = pd.ExcelFile(ss)
-
-    for name in xls.sheet_names:
-        if 'whole' in name.lower():
-            wpd_string = name
-        if 'species te' in name.lower():
-            spec_temp_string = name
-        if 'ground' in name.lower():
-            ground_string = name
-
-    #whole = xls.parse(wpd_string)
-    #whole = whole_clean(whole)
-    #whole = whole_to_ml(whole)
-
-    #species = xls.parse(spec_temp_string)
-    #species = species_clean(species)
-    #cover, frequency = get_abund_and_freq(species, column='DESC_LATIN')
-
-    ground = xls.parse(ground_string)
-    ground = ground_clean(ground)
-    print(ground)
-
+#    ground = xls.parse(ground_string)
+#    ground = ground_clean(ground)
