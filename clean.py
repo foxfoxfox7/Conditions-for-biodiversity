@@ -212,12 +212,21 @@ def ground_clean(df):
     df = df[df['PLOT_ID'].notna()]
     df = df.dropna(how='all', axis = 1)
     df = df.dropna(how='all', axis = 0)
+    df = df.rename(columns=lambda x: x.strip())
 
+    # Dealing with plot id to amke each plot unique for each survey
+    df["PLOT_ID"] = df["PLOT_ID"].astype(str)
+    year_str = str(df['YEAR'][0])
+    df['index_id'] = df['PLOT_ID'] + '_' + df['SITECODE'] + '_' + year_str
+    print(df['index_id'])
+    print('test')
+
+    # Some of the plots dont have frequency and only have percent cover,
+    # frequency values are typically about a quarter of the percent (out of 25)
     if 'FREQUENCY' not in df:
         df['FREQUENCY'] = df['PERCENT_COVER'] / 4
 
-    df = df.rename(columns=lambda x: x.strip())
-    df["PLOT_ID"] = df["PLOT_ID"].astype(str)
+    # taking the trailing and leading spaces from the features
     df['FEATURE'] = df['FEATURE'].apply(lambda x: x.strip())
 
     df_other = df[df['FEATURE'].str.lower() != 'vegetation height']
@@ -295,27 +304,31 @@ def ground_clean(df):
     for col in zero_cols:
         df_final[col] = df_final[col].fillna(0)
 
+    # Make all the column titles lower case as there is variation amonst sites
+    df_final.columns = df_final.columns.str.lower()
+
     return df_final
 
 '''
 Getting the survey data for a specific site
 '''
 
-#site_name = 'braunton'
-#site_files = []
-#for file_name in surveys:
-#    if site_name.lower() in file_name.lower():
-#        site_files.append(file_name)
-#print(site_files)
-#print(site_files[-1])
+site_name = 'saltfle'
+site_files = []
+for file_name in surveys:
+    if site_name.lower() in file_name.lower():
+        site_files.append(file_name)
+print(site_files)
+print(site_files[-1])
 
-#xls = pd.ExcelFile(site_files[-1])
-#s_names = xls.sheet_names
-#print(s_names)
+xls = pd.ExcelFile(site_files[-1])
+s_names = xls.sheet_names
+print(s_names)
 
 #whole = xls.parse('Whole Plot Data')
 #species = xls.parse('Species Template')
-#ground = xls.parse('Ground Features')
+ground = xls.parse('Ground Features')
+ground = ground_clean(ground)
 
 
 '''

@@ -79,8 +79,6 @@ for site in site_files:
 
     year = whole.YEAR[0].astype(str)
 
-    print(whole)
-
     df = pd.DataFrame()
 
     names = whole['BAP_BROAD'].unique()
@@ -97,26 +95,53 @@ for site in site_files:
     df['BAP_B'] = whole['BAP_BROAD']
     df['BAP_P'] = whole['BAP_PRIORITY']
     df['freq_count'] = frequency.gt(0).sum(axis=1)
+    df['max_height'] = ground['max_height']
+    df['median_height'] = ground['median_height']
+    df['freq-bare soil'] = ground['freq-bare soil']
     data.append(df)
 
 n_sites = len(data)
 
-
-fig, axes = plt.subplots(nrows=n_sites)
-
-for i, ax in zip(range(10), axes.flat):
-    title = data[i]['year'][0]
-    sns.boxplot(data=data[n_sites-i-1], x='freq_count', y='BAP_B', ax=ax).set_title(title)
-plt.show()
+data2 = data[::-1]
 
 
 fig, axes = plt.subplots(nrows=n_sites)
 
 for i, ax in zip(range(10), axes.flat):
-    title = data[i]['year'][0]
-    sns.boxplot(data=data[n_sites-i-1], x='freq_count', y='BAP_P', ax=ax).set_title(title)
+    title = data2[i]['year'][0]
+    sns.boxplot(data=data2[i], x='freq_count', y='BAP_B', ax=ax).set_title(title)
 plt.show()
 
+
+#fig, axes = plt.subplots(nrows=n_sites)
+
+#for i, ax in zip(range(10), axes.flat):
+#    title = data2[i]['year'][0]
+#    sns.boxplot(data=data2[i], x='freq_count', y='BAP_P', ax=ax).set_title(title)
+#plt.show()
+
+print(data2[0])
+print(data2[1])
+
+
+fig, axes = plt.subplots(nrows=n_sites)
+fig.suptitle('sward heigh (max)')
+for i, ax in zip(range(10), axes.flat):
+    title = data2[i]['year'][0]
+    sns.boxplot(data=data2[i], x='max_height', y='BAP_B', ax=ax).set_title(title)
+plt.show()
+
+fig, axes = plt.subplots(nrows=n_sites)
+for i, ax in zip(range(10), axes.flat):
+    title = data2[i]['year'][0]
+    sns.boxplot(data=data2[i], x='median_height', y='BAP_B', ax=ax).set_title(title)
+plt.show()
+
+fig, axes = plt.subplots(nrows=n_sites)
+for i, ax in zip(range(10), axes.flat):
+    title = data2[i]['year'][0]
+    sns.boxplot(data=data2[i], x='freq-bare soil', y='BAP_B', ax=ax).set_title(title)
+plt.show()
 
 '''
 
