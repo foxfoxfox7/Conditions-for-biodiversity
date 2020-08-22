@@ -9,11 +9,6 @@ import warnings
 warnings.filterwarnings('ignore')
 
 
-with open("./data/file_list", "rb") as fp:
-    b = pickle.load(fp)
-surveys = [x for x in b if 'Metadata' not in x]
-
-
 def _get_list(df, list_names, not_list = []):
 
     strings = list_names
@@ -329,58 +324,3 @@ def ground_clean(df):
 
     return df_final
 
-'''
-Getting the survey data for a specific site
-'''
-
-#site_name = 'saltfle'
-#site_files = []
-#for file_name in surveys:
-#    if site_name.lower() in file_name.lower():
-#        site_files.append(file_name)
-#print(site_files)
-#print(site_files[-1])
-
-#xls = pd.ExcelFile(site_files[-1])
-#s_names = xls.sheet_names
-#print(s_names)
-
-#whole = xls.parse('Whole Plot Data')
-#species = xls.parse('Species Template')
-#ground = xls.parse('Ground Features')
-
-#whole = whole_clean(whole)
-#print(whole.head())
-#species = species_clean(species)
-#print(species.head())
-#cover, frequency = get_abund_and_freq(species, column='desc_latin')
-#print(cover.head())
-#ground = ground_clean(ground)
-#print(ground.head())
-
-'''
-Getting all survery data
-'''
-
-#for nn, ss in enumerate(surveys):
-#    print('\n\n\n', nn, '\n\n\n', ss, '\n\n\n')
-#    xls = pd.ExcelFile(ss)
-
-#    for name in xls.sheet_names:
-#        if 'whole' in name.lower():
-#            wpd_string = name
-#        if 'species te' in name.lower():
-#            spec_temp_string = name
-#        if 'ground' in name.lower():
-#            ground_string = name
-
-#    whole = xls.parse(wpd_string)
-#    whole = whole_clean(whole)
-#    whole = whole_to_ml(whole)
-
-#    species = xls.parse(spec_temp_string)
-#    species = species_clean(species)
-#    cover, frequency = get_abund_and_freq(species, column='DESC_LATIN')
-
-#    ground = xls.parse(ground_string)
-#    ground = ground_clean(ground)
