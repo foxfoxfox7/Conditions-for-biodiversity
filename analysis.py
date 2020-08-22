@@ -72,7 +72,8 @@ for site in site_files:
 
     species = xls.parse(spec_temp_string)
     species = clean.species_clean(species)
-    cover, frequency = clean.get_abund_and_freq(species, column='DESC_LATIN')
+    print(species.head())
+    cover, frequency = clean.get_abund_and_freq(species, column='desc_latin')
 
     ground = xls.parse(ground_string)
     ground = clean.ground_clean(ground)
@@ -91,9 +92,9 @@ for site in site_files:
             print(matches)
     replace_matches_in_column(whole, 'BAP_BROAD', 'Supralittoral Sediment')
 
-    df['year'] = whole['YEAR']
-    df['BAP_B'] = whole['BAP_BROAD']
-    df['BAP_P'] = whole['BAP_PRIORITY']
+    df['year'] = whole['year']
+    df['bap_b'] = whole['bap_broad']
+    df['bap_p'] = whole['bap_priority']
     df['freq_count'] = frequency.gt(0).sum(axis=1)
     df['max_height'] = ground['max_height']
     df['median_height'] = ground['median_height']
@@ -106,10 +107,10 @@ data2 = data[::-1]
 
 
 fig, axes = plt.subplots(nrows=n_sites)
-
+fig.suptitle('sward heigh (max)')
 for i, ax in zip(range(10), axes.flat):
     title = data2[i]['year'][0]
-    sns.boxplot(data=data2[i], x='freq_count', y='BAP_B', ax=ax).set_title(title)
+    sns.boxplot(data=data2[i], x='freq_count', y='bap_b', ax=ax).set_title(title)
 plt.show()
 
 
@@ -117,7 +118,7 @@ plt.show()
 
 #for i, ax in zip(range(10), axes.flat):
 #    title = data2[i]['year'][0]
-#    sns.boxplot(data=data2[i], x='freq_count', y='BAP_P', ax=ax).set_title(title)
+#    sns.boxplot(data=data2[i], x='freq_count', y='bap_p', ax=ax).set_title(title)
 #plt.show()
 
 print(data2[0])
@@ -132,12 +133,15 @@ for i, ax in zip(range(10), axes.flat):
 plt.show()
 
 fig, axes = plt.subplots(nrows=n_sites)
+fig.suptitle('sward heigh (median)')
 for i, ax in zip(range(10), axes.flat):
     title = data2[i]['year'][0]
     sns.boxplot(data=data2[i], x='median_height', y='BAP_B', ax=ax).set_title(title)
 plt.show()
 
+# Ask vic if combingin the BARE catagories would be good. so one for each section
 fig, axes = plt.subplots(nrows=n_sites)
+fig.suptitle('frequency of bare SOIL')
 for i, ax in zip(range(10), axes.flat):
     title = data2[i]['year'][0]
     sns.boxplot(data=data2[i], x='freq-bare soil', y='BAP_B', ax=ax).set_title(title)
