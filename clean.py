@@ -325,7 +325,7 @@ def ground_clean(df):
         df_final[col] = df_final[col].fillna(0)
 
     # Make all the column titles lower case as there is variation amonst sites
-    df.columns = df.columns.str.lower()
+    df_final.columns = df_final.columns.str.lower()
 
     return df_final
 
@@ -333,30 +333,30 @@ def ground_clean(df):
 Getting the survey data for a specific site
 '''
 
-site_name = 'saltfle'
-site_files = []
-for file_name in surveys:
-    if site_name.lower() in file_name.lower():
-        site_files.append(file_name)
-print(site_files)
-print(site_files[-1])
+#site_name = 'saltfle'
+#site_files = []
+#for file_name in surveys:
+#    if site_name.lower() in file_name.lower():
+#        site_files.append(file_name)
+#print(site_files)
+#print(site_files[-1])
 
-xls = pd.ExcelFile(site_files[-1])
-s_names = xls.sheet_names
-print(s_names)
+#xls = pd.ExcelFile(site_files[-1])
+#s_names = xls.sheet_names
+#print(s_names)
 
-whole = xls.parse('Whole Plot Data')
-species = xls.parse('Species Template')
-ground = xls.parse('Ground Features')
+#whole = xls.parse('Whole Plot Data')
+#species = xls.parse('Species Template')
+#ground = xls.parse('Ground Features')
 
-whole = whole_clean(whole)
-print(whole.head())
-species = species_clean(species)
-print(species.head())
-cover, frequency = get_abund_and_freq(species, column='desc_latin')
-print(cover.head())
-ground = ground_clean(ground)
-print(ground.head())
+#whole = whole_clean(whole)
+#print(whole.head())
+#species = species_clean(species)
+#print(species.head())
+#cover, frequency = get_abund_and_freq(species, column='desc_latin')
+#print(cover.head())
+#ground = ground_clean(ground)
+#print(ground.head())
 
 '''
 Getting all survery data
