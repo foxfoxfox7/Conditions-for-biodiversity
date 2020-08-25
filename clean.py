@@ -50,6 +50,9 @@ def whole_clean(df):
     df.columns = df.columns.str.lower()
 
     # Dealing with plot id to amke each plot unique for each survey
+    # some plot_id are float, some are int some are object
+    if df["plot_id"].dtype == float:
+        df["plot_id"] = df["plot_id"].astype(int)
     df["plot_id"] = df["plot_id"].astype(str)
     year_str = str(int(df['year'][0]))
     df['index_id'] = df['plot_id'] + '_' + df['sitecode'] + '_' + year_str
@@ -154,6 +157,9 @@ def species_clean(df):
     df.columns = df.columns.str.lower()
 
     # Dealing with plot id to amke each plot unique for each survey
+    # some plot_id are float, some are int some are object
+    if df["plot_id"].dtype == float:
+        df["plot_id"] = df["plot_id"].astype(int)
     df["plot_id"] = df["plot_id"].astype(str)
     year_str = str(int(df['year'][0]))
     df['index_id'] = df['plot_id'] + '_' + df['sitecode'] + '_' + year_str
@@ -194,14 +200,15 @@ def species_clean(df):
 
 def get_abund_and_freq(df, column):
 
+    # making a dictionary for each plot id
     df_dict = {num: df.loc[df['index_id'] == num] for num in df['index_id']}
     cover_plots = []
     frequency_plots = []
+    # splitting the DF into one for each plot before transforming and combining
     for key in df_dict.keys():
         df_dict[key] = df_dict[key].drop_duplicates(subset=[column],
                                                           keep='first')
 
-        #print(df_dict[key].head())
         abund_inst = pd.DataFrame()
         abund_inst = df_dict[key].pivot(index = 'index_id', columns = column,
                                                      values = 'percent_cover')
@@ -214,10 +221,8 @@ def get_abund_and_freq(df, column):
 
     df_abund = pd.concat(cover_plots, axis=1)
     df_abund = df_abund.groupby(level=0, axis=1).sum()
-    #df_abund = df_abund.reset_index()
     df_freq = pd.concat(frequency_plots, axis=1)
     df_freq = df_freq.groupby(level=0, axis=1).sum()
-    #df_freq = df_freq.reset_index()
 
     return df_abund, df_freq
 
@@ -231,6 +236,9 @@ def ground_clean(df):
     df.columns = df.columns.str.lower()
 
     # Dealing with plot id to amke each plot unique for each survey
+    # some plot_id are float, some are int some are object
+    if df["plot_id"].dtype == float:
+        df["plot_id"] = df["plot_id"].astype(int)
     df["plot_id"] = df["plot_id"].astype(str)
     year_str = str(int(df['year'][0]))
     df['index_id'] = df['plot_id'] + '_' + df['sitecode'] + '_' + year_str
@@ -243,13 +251,16 @@ def ground_clean(df):
 
     # taking the trailing and leading spaces from the features
     df['feature'] = df['feature'].apply(lambda x: x.strip())
+    # changing all feature labels to lower case to cover for discrepancies
+    df['feature'] = df['feature'].str.lower()
 
+    # there is 1 veg height for each plot so is taken as the DF base
+    df_height = df[df['feature'].str.lower() == 'vegetation height']
+    # The other catagories need to be transformed into a pivot table
     df_other = df[df['feature'].str.lower() != 'vegetation height']
-
     g_cover, g_frequency = get_abund_and_freq(df_other, column='feature')
 
-    df_height = df[df['feature'].str.lower() == 'vegetation height']
-
+    # Correcting typos and alt inputs in the cell columns
     destring_cols = _get_list(df_height, ['cell'])
     for col in destring_cols:
         if df_height[col].dtype == object:
@@ -272,27 +283,26 @@ def ground_clean(df):
         else:
             pass
 
+    # reducing the cell columsn to just a median and max height
     try:
         df_height['max_height'] = df_height.loc[:, 'cell_1':'cell_25'].max(1)
         df_height['median_height'] =\
                                  df_height.loc[:, 'cell_1':'cell_25'].median(1)
+    # There are some plots with no data here
     except:
         df_height['max_height'] = np.NaN
         df_height['median_height'] = np.NaN
 
-
-    median_str = ['median_height', 'max_height']
-    for col in median_str:
-        df_height[col] = df_height[col].fillna(df_height[col].median())
-
     df_height = df_height[df_height.duplicated('index_id',
                                                         keep='first') == False]
 
+    # remove a load of useless columns. done late as 'cell' is needed before
     remove_strings = ['percent', 'freq', 'data', 'cell', 'feature', 'site',
         'code', 'year', 'qa']
     remove_cols = _get_list(df_height, remove_strings)
     df_height = df_height.drop(remove_cols, axis = 1)
 
+    # keeping only the essential information to add our transformed DFs to
     df_base = pd.DataFrame()
     base_strings = ['sitec', 'mcode', 'index']
     base_cols = _get_list(df, base_strings)
@@ -300,18 +310,18 @@ def ground_clean(df):
         df_base[col] = df[col]
     df_base = df_base[df_base.duplicated('index_id', keep='first') == False]
 
+    # Setting the same index before combining the DFs
+    # index for cover and frequency are already set during pivot table
     df_base = df_base.set_index('index_id')
     df_height = df_height.set_index('index_id')
-    #g_cover = g_cover.set_index('index')
-    #g_frequency = g_frequency.set_index('index')
 
+    # labelling the column titles separately for when they need to be combined
     g_cover = g_cover.add_prefix('cover-')
     g_frequency = g_frequency.add_prefix('freq-')
 
     df_final = pd.concat((df_base, df_height, g_frequency, g_cover), axis = 1)
 
-    #df_final['index_id'] = df_final.index
-
+    # Filling NaNs
     median_cols = _get_list(df_final, ['height'])
     for col in median_cols:
         df_final[col] = df_final[col].fillna(df_final[col].median())
@@ -319,8 +329,4 @@ def ground_clean(df):
     for col in zero_cols:
         df_final[col] = df_final[col].fillna(0)
 
-    # Make all the column titles lower case as there is variation amonst sites
-    df_final.columns = df_final.columns.str.lower()
-
     return df_final
-
