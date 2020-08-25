@@ -65,7 +65,7 @@ for nn, ss in enumerate(surveys[:2]):
 
     species = xls.parse(spec_temp_string)
     species = clean.species_clean(species)
-    cover, frequency = clean.get_abund_and_freq(species, column='DESC_LATIN')
+    cover, frequency = clean.get_abund_and_freq(species, column='desc_latin')
 
     ground = xls.parse(ground_string)
     ground = clean.ground_clean(ground)
