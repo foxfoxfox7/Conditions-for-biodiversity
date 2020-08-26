@@ -4,3 +4,4 @@ docs
 __pycache__
 testing.py
 .ipynb_checkpoints
+figures

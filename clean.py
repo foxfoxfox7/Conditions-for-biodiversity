@@ -58,7 +58,7 @@ def whole_clean(df):
     df['index_id'] = df['plot_id'] + '_' + df['sitecode'] + '_' + year_str
 
     remove_strings = ['note', 'comment', 'remark', 'date', 'data_issue',
-        'qa', 'bng_grid', 'survey', 'nvc', 'strat']
+        'qa', 'bng_grid', 'survey', 'strat']
     remove_cols = _get_list(df, remove_strings)
     df = df.drop(remove_cols, axis = 1)
 
@@ -88,62 +88,6 @@ def whole_clean(df):
 
     # Make all the column titles lower case as there is variation amonst sites
     df.columns = df.columns.str.lower()
-
-    return df
-
-def whole_to_ml(df):
-
-    remove_strings = ['year', 'sitecode']
-    remove_cols = _get_list(df, remove_strings)
-    df = df.drop(remove_cols, axis = 1)
-
-    # For making dummies of codeypes that have multiple columns
-    code_types = ['scode']
-    dummy_dfs = []
-    for code_str in code_types:
-        into_list = []
-        into_list.append(code_str)
-        dummies_cols = _get_list(df, into_list)
-        dummies = []
-        for col in dummies_cols:
-            dummies.append(pd.get_dummies(df[col]))
-        try:
-            site_dummies = pd.concat(dummies, axis = 1)
-            df = df.drop(dummies_cols, axis = 1)
-            site_dummies = site_dummies.groupby(level=0, axis=1).sum()
-            site_dummies = site_dummies.add_prefix(code_str + '=')
-            dummy_dfs.append(site_dummies)
-        except ValueError:
-            print('no scode columns')
-
-    restring_strings = ['code']
-    restring_cols = _get_list(df, restring_strings)
-    whole2 = pd.DataFrame({col:str(col)+'=' for col in df},
-     index=df.index) + df.astype(str)
-    df = df.drop(restring_cols, axis = 1)
-    for col in restring_cols:
-        df[col] = whole2[col]
-
-    dummies_strings = ['code', 'bap']#, 'strat'
-    dummies_cols = _get_list(df, dummies_strings)
-    dummies = []
-    for col in dummies_cols:
-        dummies.append(pd.get_dummies(df[col]))
-    site_dummies = pd.concat(dummies, axis = 1)
-    df = df.drop(dummies_cols, axis = 1)
-    df = pd.concat((df, site_dummies), axis = 1)
-
-    # re attaching the dummy dfs that have multi column codes after
-    # operations on 'code' columns
-    try:
-        for data_f in dummy_dfs:
-            df = pd.concat((df, data_f), axis = 1)
-    except:
-        pass
-
-    remove_strings = ['nan']
-    remove_cols = _get_list(df, remove_strings)
-    df = df.drop(remove_cols, axis = 1)
 
     return df
 
@@ -219,6 +163,7 @@ def get_abund_and_freq(df, column):
                                                          values = 'frequency')
         frequency_plots.append(freq_inst)
 
+    # combining the reulting pivot tables for each plot into a survey DF
     df_abund = pd.concat(cover_plots, axis=1)
     df_abund = df_abund.groupby(level=0, axis=1).sum()
     df_freq = pd.concat(frequency_plots, axis=1)
@@ -236,7 +181,7 @@ def ground_clean(df):
     df.columns = df.columns.str.lower()
 
     # Dealing with plot id to amke each plot unique for each survey
-    # some plot_id are float, some are int some are object
+    # some plot_id are float, some are int, some are object
     if df["plot_id"].dtype == float:
         df["plot_id"] = df["plot_id"].astype(int)
     df["plot_id"] = df["plot_id"].astype(str)
@@ -258,6 +203,8 @@ def ground_clean(df):
     df_height = df[df['feature'].str.lower() == 'vegetation height']
     # The other catagories need to be transformed into a pivot table
     df_other = df[df['feature'].str.lower() != 'vegetation height']
+    # Function which generates pivot tables
+    # Used if there are multiple entries for each plot.1 plot should be 1 row
     g_cover, g_frequency = get_abund_and_freq(df_other, column='feature')
 
     # Correcting typos and alt inputs in the cell columns
@@ -283,6 +230,7 @@ def ground_clean(df):
         else:
             pass
 
+
     # reducing the cell columsn to just a median and max height
     try:
         df_height['max_height'] = df_height.loc[:, 'cell_1':'cell_25'].max(1)
@@ -293,6 +241,7 @@ def ground_clean(df):
         df_height['max_height'] = np.NaN
         df_height['median_height'] = np.NaN
 
+    # There are some plots that have multiple entries This drops al but the 1st
     df_height = df_height[df_height.duplicated('index_id',
                                                         keep='first') == False]
 
