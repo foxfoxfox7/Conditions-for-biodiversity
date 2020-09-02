@@ -10,6 +10,11 @@ warnings.filterwarnings('ignore')
 
 
 def _get_list(df, list_names, not_list = []):
+    '''
+    Looks for any column names with the strings provided in them
+    Also drops any with the string in not_list in them
+    Used so that exact names are needed in case of typos
+    '''
 
     strings = list_names
     choose_cols = []
@@ -28,19 +33,10 @@ def _get_list(df, list_names, not_list = []):
 
     return res
 
-def _destring_plot_id(df):
-
-    for i in df['PLOT_ID'].iteritems():
-        if isinstance(i[1], str):
-            if 'control' in i[1].lower():
-                num_list = [int(nn) for nn in i[1].split() if nn.isdigit()]
-                df.loc[i[0], 'PLOT_ID'] = num_list[-1] + 100
-            df.loc[i[0], 'PLOT_ID'] = re.sub("[^0-9]", "", df.loc[i[0],
-                                                             'PLOT_ID'])
-
-    df["PLOT_ID"] = df["PLOT_ID"].astype(float)
-
 def whole_clean(df):
+    '''
+    Cleans the 'whole plot data' sheet in each survey excel file
+    '''
 
     df = df[df['PLOT_ID'].notna()]
     df = df.dropna(how='all', axis = 1)
@@ -57,16 +53,21 @@ def whole_clean(df):
     year_str = str(int(df['year'][0]))
     df['index_id'] = df['plot_id'] + '_' + df['sitecode'] + '_' + year_str
 
+    # removing a load of columns that have no useful information
     remove_strings = ['note', 'comment', 'remark', 'date', 'data_issue',
         'qa', 'bng_grid', 'survey', 'strat']
     remove_cols = _get_list(df, remove_strings)
     df = df.drop(remove_cols, axis = 1)
 
+    # replaces blank strings with NaN ie ''
     df = df.replace(r'^\s*$', np.NaN, regex=True)
 
+    # strips leading and trailing spaces from any columns that have strings
     df_obj = df.select_dtypes(['object'])
     df[df_obj.columns] = df_obj.apply(lambda x: x.str.strip())
 
+    # These columns shoudl be floats but because of typos are sometimes
+    # strings. looks for typos to correct and converts to float
     destring_strings = ['landuse', 'slopeform', 'scode', 'slope',
      'aspect', 'altitude']
     destring_cols = _get_list(df, destring_strings)
@@ -79,6 +80,8 @@ def whole_clean(df):
                     df.loc[i[0], col] = np.NaN
         df[col] = df[col].astype(float)
 
+    # All columns with numerical data. The values are typical so median
+    # is usually not a bad guess
     median_str = ['aspect', 'altitude', 'eastings', 'northings', 'slope']
     median_cols = _get_list(df, median_str, not_list=['slopeform'])
     for col in median_cols:
@@ -92,10 +95,17 @@ def whole_clean(df):
     return df
 
 def species_clean(df):
+    '''
+    Cleans the 'species template' sheet in each survey excel file
+    '''
 
+    # only takes the rows that have values in 'PLOT_ID'
+    # There are many blank rows, often at the end of the sheet
     df = df[df['PLOT_ID'].notna()]
+    # drops any columsn or rows that are all NaNs
     df = df.dropna(how='all', axis = 1)
     df = df.dropna(how='all', axis = 0)
+    # strips leading and trailing spaces from the colum titles
     df = df.rename(columns=lambda x: x.strip())
     # Make all the column titles lower case as there is variation amonst sites
     df.columns = df.columns.str.lower()
@@ -116,6 +126,10 @@ def species_clean(df):
     remove_cols = _get_list(df, remove_strings)
     df = df.drop(remove_cols, axis = 1)
 
+    # strips leading and trailing spaces from any columns that have strings
+    df_obj = df.select_dtypes(['object'])
+    df[df_obj.columns] = df_obj.apply(lambda x: x.str.strip())
+
     destring_strings = ['percent', 'freq']
     destring_cols = _get_list(df, destring_strings)
     for col in destring_cols:
@@ -127,14 +141,14 @@ def species_clean(df):
                     df.loc[i[0], col] = np.NaN
         df[col] = df[col].astype(float)
 
+    # All columns with numerical data. The values are typical so median
+    # is usually not a bad guess
     median_str = ['percent', 'frequency']
     median_cols = _get_list(df, median_str)
     for col in median_cols:
         df[col] = df[col].fillna(df[col].median())
 
-    df_obj = df.select_dtypes(['object'])
-    df[df_obj.columns] = df_obj.apply(lambda x: x.str.strip())
-
+    # drops any rows that have NaNs in them
     df = df.dropna()
 
     # Make all the column titles lower case as there is variation amonst sites
@@ -143,6 +157,11 @@ def species_clean(df):
     return df
 
 def get_abund_and_freq(df, column):
+    '''
+    makes pivot tables out of the data. Used when the data has more than
+    one row per plot. this is true on some of the sheets so needs to be
+    converted to a different form to match with 'whole plot data'
+    '''
 
     # making a dictionary for each plot id
     df_dict = {num: df.loc[df['index_id'] == num] for num in df['index_id']}
@@ -172,6 +191,9 @@ def get_abund_and_freq(df, column):
     return df_abund, df_freq
 
 def ground_clean(df):
+    '''
+    Cleans the 'ground features' sheet in each survey excel file
+    '''
 
     df = df[df['PLOT_ID'].notna()]
     df = df.dropna(how='all', axis = 1)
