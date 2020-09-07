@@ -13,35 +13,12 @@ warnings.filterwarnings('ignore')
 import clean
 
 
-def check_names(list_of_names, min_ratio = 90):
-
-    print('\nchecking for typos\n')
-    for pp in list_of_names:
-        matches = fuzzywuzzy.process.extract(pp, list_of_names, limit=2, scorer=fuzzywuzzy.fuzz.token_sort_ratio)
-        if matches[1][1] > min_ratio:
-            print(pp, ' - ', matches)
-
-def replace_matches_in_column(df, column, string_to_match, min_ratio = 90):
-    # get a list of unique strings
-    strings = df[column].unique()
-
-    # get the top 10 closest matches to our input string
-    matches = fuzzywuzzy.process.extract(string_to_match, strings,
-                                         limit=10, scorer=fuzzywuzzy.fuzz.token_sort_ratio)
-
-    # only get matches with a ratio > 90
-    close_matches = [matches[0] for matches in matches if matches[1] >= min_ratio]
-
-    # get the rows of all the close matches in our dataframe
-    rows_with_matches = df[column].isin(close_matches)
-
-    # replace all rows with close matches with the input matches
-    df.loc[rows_with_matches, column] = string_to_match
-
-
 with open("./data/file_list", "rb") as fp:
     b = pickle.load(fp)
 surveys = [x for x in b if 'Metadata' not in x]
+
+with open("./my_data/lookup.pkl", "rb") as fp:
+    lookup = pickle.load(fp)
 
 ########################################################################
 # Getting the data frames
@@ -53,6 +30,9 @@ for file_name in surveys:
     if site_name.lower() in file_name.lower():
         site_files.append(file_name)
 print('\n\n', site_files, '\n\n')
+
+# Reverses the order so that it goes in chronological order
+site_files = site_files[::-1]
 
 data = []
 for site in site_files:
@@ -80,6 +60,10 @@ for site in site_files:
 
     df = pd.DataFrame()
 
+    print(whole.head())
+    print(ground.head())
+    #exit()
+
     ####################################################################
     # extracting the useful information
     ####################################################################
@@ -99,11 +83,10 @@ for site in site_files:
     df['max_height'] = ground['max_height']
     df['median_height'] = ground['median_height']
     df['freq-bare soil'] = ground['freq-bare soil']
+    df['freq-litter'] = ground['freq-litter']
     data.append(df)
 
 n_sites = len(data)
-# Reverses the order so that it goes in chronological order
-data2 = data[::-1]
 
 ########################################################################
 # plotting the difference between habitats in box and whisker
@@ -149,8 +132,7 @@ plt.show()
 # concatting the data and fixing bap_b
 ########################################################################
 
-total_data = pd.concat(data2)
-print(total_data.head())
+total_data = pd.concat(data)
 
 total_data = total_data[total_data['bap_b'].notna()]
 total_data['bap_b'] = total_data['bap_b'].str.lower()
@@ -160,13 +142,14 @@ print('\nnames\n')
 for nn in names:
     print(nn)
 names = [x for x in names if str(x) != 'nan']
-check_names(names, min_ratio = 80)
+clean.check_names(names, min_ratio = 80)
 
 # Saltfleetby
-#replace_matches_in_column(total_data, 'bap_b', 'fen, marsh and swamp', min_ratio = 80)
-#replace_matches_in_column(total_data, 'bap_b', 'supralittoral sediment')
+#clean.replace_matches_in_column(total_data, 'bap_b', 'fen, marsh and swamp', min_ratio = 80)
+#clean.replace_matches_in_column(total_data, 'bap_b', 'supralittoral sediment')
 
 bap_b = total_data['bap_b'].unique()
+print(bap_b)
 fig_num = len(bap_b)
 
 ########################################################################
@@ -210,8 +193,8 @@ total_data['nvc_edit'] = total_data['nvc'].str.replace('[0-9]', '')
 years = total_data['year'].unique()
 for yy in years:
     df = total_data[total_data['year'] == yy]
-    print('\n', yy, '\n')
-    print(df['nvc_edit'].value_counts())
+    #print('\n', yy, '\n')
+    #print(df['nvc_edit'].value_counts())
 
 nvc_types = total_data['nvc_edit'].value_counts()
 nvc_types = nvc_types[nvc_types >=10]
@@ -242,3 +225,31 @@ def plot_by_nvc_vs_year(y_col, title = '', save = False, show = True):
 #plot_by_nvc_vs_year('competitors', 'competitors')
 #plot_by_nvc_vs_year('stress', 'stress')
 #plot_by_nvc_vs_year('rudereals', 'rudereals')
+#plot_by_nvc_vs_year('freq-litter', 'freq-litter')
+
+########################################################################
+# correlation
+########################################################################
+
+
+#g = sns.PairGrid(total_data, hue="year")
+#g.map_diag(plt.hist)
+#g.map_offdiag(plt.scatter)
+#g.add_legend()
+#plt.show()
+
+col_list = total_data.columns.tolist()
+col_list2 = [col for col in col_list if total_data[col].dtype == float]
+
+#for var in col_list2:
+#    sns.relplot(data=total_data, x='freq_count', y=var, hue='bap_b')
+#    plt.show()
+
+nvc_df = total_data[total_data['nvc_edit'].isin(nvc_t)]
+drop_l = ['freq-litter', 'median_height', 'max_height']
+nvc_df = nvc_df.drop(drop_l, axis=1)
+col_list2 = [val for val in col_list2 if val not in drop_l]
+
+for var in col_list2:
+    sns.lmplot(data=nvc_df, x='freq_count', y=var, col='nvc_edit')
+    plt.show()

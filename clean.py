@@ -126,6 +126,12 @@ def species_clean(df):
     remove_cols = _get_list(df, remove_strings)
     df = df.drop(remove_cols, axis = 1)
 
+    # there are some strings in the percent cover which need to removed
+    for i in df['percent_cover'].iteritems():
+        if isinstance(i[1], str):
+            df.loc[i[0], 'percent_cover'] = np.NaN
+    df['percent_cover'] = df['percent_cover'].astype(float)
+
     # strips leading and trailing spaces from any columns that have strings
     df_obj = df.select_dtypes(['object'])
     df[df_obj.columns] = df_obj.apply(lambda x: x.str.strip())
@@ -214,7 +220,7 @@ def ground_clean(df):
     # frequency values are typically about a quarter of the percent (out of 25)
     if 'frequency' not in df:
         df['frequency'] = df['percent_cover'] / 4
-        print('\n\nplot ' + df['sitecode'] + df['year'] + ' with no frequency')
+        print('\n\nplot ' + str(df['sitecode'][0]) + str(df['year'][0]) + ' with no frequency')
 
     # taking the trailing and leading spaces from the features
     df['feature'] = df['feature'].apply(lambda x: x.strip())
@@ -301,3 +307,28 @@ def ground_clean(df):
         df_final[col] = df_final[col].fillna(0)
 
     return df_final
+
+def check_names(list_of_names, min_ratio = 90):
+
+    print('\nchecking for typos\n')
+    for pp in list_of_names:
+        matches = fuzzywuzzy.process.extract(pp, list_of_names, limit=2, scorer=fuzzywuzzy.fuzz.token_sort_ratio)
+        if matches[1][1] > min_ratio:
+            print(pp, ' - ', matches)
+
+def replace_matches_in_column(df, column, string_to_match, min_ratio = 90):
+    # get a list of unique strings
+    strings = df[column].unique()
+
+    # get the top 10 closest matches to our input string
+    matches = fuzzywuzzy.process.extract(string_to_match, strings,
+                                         limit=10, scorer=fuzzywuzzy.fuzz.token_sort_ratio)
+
+    # only get matches with a ratio > 90
+    close_matches = [matches[0] for matches in matches if matches[1] >= min_ratio]
+
+    # get the rows of all the close matches in our dataframe
+    rows_with_matches = df[column].isin(close_matches)
+
+    # replace all rows with close matches with the input matches
+    df.loc[rows_with_matches, column] = string_to_match
