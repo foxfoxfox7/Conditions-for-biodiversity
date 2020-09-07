@@ -59,10 +59,8 @@ for site in site_files:
     year = whole['year'][0].astype(str)
 
     df = pd.DataFrame()
-
     print(whole.head())
     print(ground.head())
-    #exit()
 
     ####################################################################
     # extracting the useful information
@@ -184,6 +182,8 @@ def plot_by_bap_vs_year(y_col, title = '', save = False, show = True):
 # nvc
 ########################################################################
 
+
+
 total_data['nvc'] = total_data['nvc'].str.partition(':')[0]
 total_data['nvc'] = total_data['nvc'].str.replace('[a-z]', '')
 total_data['nvc_edit'] = total_data['nvc'].str.replace('[0-9]', '')
@@ -214,7 +214,8 @@ def plot_by_nvc_vs_year(y_col, title = '', save = False, show = True):
     if show:
         plt.show()
 
-#plot_by_nvc_vs_year('freq_count', 'species_count')
+
+plot_by_nvc_vs_year('freq_count', 'species_count')
 #plot_by_nvc_vs_year('max_height', 'sward_max')
 #plot_by_nvc_vs_year('median_height', 'sward med')
 #plot_by_nvc_vs_year('freq-bare soil', 'bare_soil_freq')
@@ -230,7 +231,6 @@ def plot_by_nvc_vs_year(y_col, title = '', save = False, show = True):
 ########################################################################
 # correlation
 ########################################################################
-
 
 #g = sns.PairGrid(total_data, hue="year")
 #g.map_diag(plt.hist)
