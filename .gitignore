@@ -5,4 +5,4 @@ __pycache__
 testing.py
 .ipynb_checkpoints
 figures
-total_data.pkl
+my_data
