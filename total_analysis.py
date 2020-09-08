@@ -21,6 +21,9 @@ df = pd.read_pickle('./my_data/total_data.pkl')
 print(df.head())
 col_list = df.columns.tolist()
 
+print(df.year.value_counts())
+#df['year'] = df['year'].astype(int)
+
 ########################################################################
 # cleaning bap broad
 ########################################################################
@@ -67,7 +70,49 @@ print('\nimportant habitats\n', bap_t)
 df_bap = df[df['bap_broad'].isin(bap_t)]
 
 ########################################################################
-# comparing values accross bap broad
+# cleaning nvc
+########################################################################
+
+print(df.head())
+print(df.info())
+
+# removing the inofrmation on how good the nvc fit is
+df['nvc_first'] = df['nvc_first'].str.partition(':')[0]
+df['nvc_first'] = df['nvc_first'].str.partition('-')[0]
+
+# the subdevisions are too specific to use. not enough samples
+nums = ['0','1','2','3','4','5','6','7','8','9']
+for nn in nums:
+    df['nvc_first'] = df['nvc_first'].str.partition(nn)[0]
+
+df['nvc_first'] = df['nvc_first'].replace({
+    "w": 'woodlands and scrub',
+    'm': 'mires',
+    "h": 'heathes',
+    'mg': 'mesotrophic grasslands',
+    'cg': 'calcicolous grasslands',
+    'u': 'calcifugous grasslands',
+    'a': 'aquatic communities',
+    's': 'swamps and tall herb ferns',
+    'sd': 'shingle, sandline and sand-dune',
+    'sm': 'salt marsh',
+    'mc': 'maritime cliff',
+    'ov': 'vegetation of open habitats'
+    })
+
+# counting how many of each NVC types has been assigned
+# only taking the types that have enough samples
+nvc_types = df['nvc_first'].value_counts()
+print(nvc_types)
+nvc_types = nvc_types[nvc_types >=20]
+nvc_t = nvc_types.index.tolist()
+
+# leaving only the parts of the df with the important habitats
+print('\nimportant nvc types\n', nvc_t)
+df_nvc = df[df['nvc_first'].isin(nvc_t)]
+
+########################################################################
+# looking for correlations across different habitats
 ########################################################################
 
 # finding the columns with numerical entries to compare
@@ -84,44 +129,39 @@ print(float_list)
 #    sns.lmplot(data=df_bap, x='freq_count', y=var, col='bap_broad', sharex=False)
 #    plt.show()
 
-########################################################################
-# cleaning nvc
-########################################################################
-
-print(df.head())
-print(df.info())
-
-# removing the inofrmation on how good the nvc fit is
-df['nvc_first'] = df['nvc_first'].str.partition(':')[0]
-df['nvc_first'] = df['nvc_first'].str.partition('-')[0]
-
-# the subdevisions are too specific to use. not enought samples
-nums = ['0','1','2','3','4','5','6','7','8','9']
-for nn in nums:
-    df['nvc_first'] = df['nvc_first'].str.partition(nn)[0]
-
-nvc_types = df['nvc_first'].value_counts()
-nvc_types = nvc_types[nvc_types >=20]
-nvc_t = nvc_types.index.tolist()
-
-# leaving only the parst of the df with the important habitats
-print('\nimportant nvc types\n', nvc_t)
-df_nvc = df[df['nvc_first'].isin(nvc_t)]
-
-########################################################################
-# comparing values accross nvc types
-########################################################################
-
 # finding the columns with numerical entries to compare
 float_list = [col for col in col_list if df[col].dtype == float]
 print('\nlist of float columns\n', float_list)
 
 # dropping a few columns that don't have any meaningful information
-drop_l = ['freq-litter', 'median_height', 'max_height', 'year']
+drop_l = ['freq-litter', 'median_height', 'max_height', 'year', 'freq-bare soil']
 df_nvc = df_nvc.drop(drop_l, axis=1)
 float_list = [val for val in float_list if val not in drop_l]
 print(float_list)
 
-for var in float_list:
-    sns.lmplot(data=df_nvc, x='freq_count', y=var, col='nvc_first', sharex=False)#.set_title('lalala')
+#for var in float_list:
+#    sns.lmplot(data=df_nvc, x='freq_count', y=var, col='nvc_first', sharex=False)#.set_title('lalala')
+#    plt.show()
+
+########################################################################
+# comparing how values change over time across different habitats
+########################################################################
+
+fig_num = len(bap_t)
+
+# plots the changes of number of species per plot for each bap habitat
+for bap in bap_t:
+    df2 = df[df['bap_broad']==bap]
+    fig, ax = plt.subplots(dpi = 250)
+    sns.boxplot(data=df2, x='year', y='freq_count', ax=ax
+        ).set_title(bap+' - '+str(df2['bap_broad'].size)+' samples')
+    plt.show()
+
+fig_num = len(nvc_t)
+
+# plots the changes of number of species per plot for each nvc habitat
+for nvc in nvc_t:
+    df2 = df[df['nvc_first']==nvc]
+    sns.boxplot(data=df2, x='year', y='freq_count'
+        ).set_title(nvc+' - '+str(df2['nvc_first'].size)+' samples')
     plt.show()
