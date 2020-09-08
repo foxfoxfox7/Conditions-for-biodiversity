@@ -69,12 +69,12 @@ bap_t = bap_types.index.tolist()
 print('\nimportant habitats\n', bap_t)
 df_bap = df[df['bap_broad'].isin(bap_t)]
 
+# number of bap habitats of interest
+bap_n = len(bap_t)
+
 ########################################################################
 # cleaning nvc
 ########################################################################
-
-print(df.head())
-print(df.info())
 
 # removing the inofrmation on how good the nvc fit is
 df['nvc_first'] = df['nvc_first'].str.partition(':')[0]
@@ -111,37 +111,8 @@ nvc_t = nvc_types.index.tolist()
 print('\nimportant nvc types\n', nvc_t)
 df_nvc = df[df['nvc_first'].isin(nvc_t)]
 
-########################################################################
-# looking for correlations across different habitats
-########################################################################
-
-# finding the columns with numerical entries to compare
-float_list = [col for col in col_list if df[col].dtype == float]
-print('\nlist of float columns\n', float_list)
-
-# dropping a few columns that don't have any meaningful information
-drop_l = ['freq-litter', 'median_height', 'max_height', 'year']
-df_bap = df_bap.drop(drop_l, axis=1)
-float_list = [val for val in float_list if val not in drop_l]
-print(float_list)
-
-#for var in float_list:
-#    sns.lmplot(data=df_bap, x='freq_count', y=var, col='bap_broad', sharex=False)
-#    plt.show()
-
-# finding the columns with numerical entries to compare
-float_list = [col for col in col_list if df[col].dtype == float]
-print('\nlist of float columns\n', float_list)
-
-# dropping a few columns that don't have any meaningful information
-drop_l = ['freq-litter', 'median_height', 'max_height', 'year', 'freq-bare soil']
-df_nvc = df_nvc.drop(drop_l, axis=1)
-float_list = [val for val in float_list if val not in drop_l]
-print(float_list)
-
-#for var in float_list:
-#    sns.lmplot(data=df_nvc, x='freq_count', y=var, col='nvc_first', sharex=False)#.set_title('lalala')
-#    plt.show()
+# number of nvc habitats of interest
+nvc_n = len(nvc_t)
 
 ########################################################################
 # comparing how values change over time across different habitats
@@ -164,4 +135,39 @@ for nvc in nvc_t:
     df2 = df[df['nvc_first']==nvc]
     sns.boxplot(data=df2, x='year', y='freq_count'
         ).set_title(nvc+' - '+str(df2['nvc_first'].size)+' samples')
+    plt.show()
+
+########################################################################
+# looking for correlations across different habitats
+########################################################################
+
+# finding the columns with numerical entries to compare
+float_list = [col for col in col_list if df[col].dtype == float]
+print('\nlist of float columns\n', float_list)
+
+# dropping a few columns that don't have any meaningful information
+drop_l = ['freq-litter', 'median_height', 'max_height', 'year']
+df_bap = df_bap.drop(drop_l, axis=1)
+float_list = [val for val in float_list if val not in drop_l]
+print(float_list)
+
+for var in float_list:
+    sns.lmplot(data=df_bap, x='freq_count', y=var, col='bap_broad',
+        sharex=False)
+    plt.show()
+
+# finding the columns with numerical entries to compare
+float_list = [col for col in col_list if df[col].dtype == float]
+print('\nlist of float columns\n', float_list)
+
+# dropping a few columns that don't have any meaningful information
+drop_l = ['freq-litter', 'median_height', 'max_height', 'year',
+    'freq-bare soil']
+df_nvc = df_nvc.drop(drop_l, axis=1)
+float_list = [val for val in float_list if val not in drop_l]
+print(float_list)
+
+for var in float_list:
+    sns.lmplot(data=df_nvc, x='freq_count', y=var, col='nvc_first',
+        sharex=False)#.set_title('lalala')
     plt.show()
