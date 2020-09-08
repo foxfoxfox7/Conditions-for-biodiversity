@@ -45,11 +45,33 @@ def whole_clean(df):
     # Make all the column titles lower case as there is variation amonst sites
     df.columns = df.columns.str.lower()
 
+    # Some of the columns that are the same value have missing values
+    year = df['year'].loc[df['year'].first_valid_index()]
+    sitecode = df['sitecode'].loc[df['sitecode'].first_valid_index()]
+    mcode = df['mcode'].loc[df['sitecode'].first_valid_index()]
+    df['year'] = df['year'].fillna(year)
+    df['sitecode'] = df['sitecode'].fillna(sitecode)
+    df['mcode'] = df['mcode'].fillna(mcode)
+
+    # some of the years are written as floats
+    df['year'] = df['year'].astype(int)
+    # some of the inputs for light are typos making them strings
+    if 'light' in df.columns:
+        for i in df['light'].iteritems():
+            if isinstance(i[1], str):
+                df.loc[i[0], 'light'] = np.NaN
+        df['light'] = df['light'].astype(float)
+
     # Dealing with plot id to amke each plot unique for each survey
     # some plot_id are float, some are int some are object
     if df["plot_id"].dtype == float:
         df["plot_id"] = df["plot_id"].astype(int)
     df["plot_id"] = df["plot_id"].astype(str)
+
+    # there are some leading and trailing spaces in the plot_id strings
+    df['plot_id'] = df['plot_id'].str.strip()
+    df['sitecode'] = df['sitecode'].str.strip()
+
     year_str = str(int(df['year'][0]))
     df['index_id'] = df['plot_id'] + '_' + df['sitecode'] + '_' + year_str
 
@@ -110,11 +132,27 @@ def species_clean(df):
     # Make all the column titles lower case as there is variation amonst sites
     df.columns = df.columns.str.lower()
 
+    # Some of the columns that are the same value have missing values
+    year = df['year'].loc[df['year'].first_valid_index()]
+    sitecode = df['sitecode'].loc[df['sitecode'].first_valid_index()]
+    mcode = df['mcode'].loc[df['sitecode'].first_valid_index()]
+    df['year'] = df['year'].fillna(year)
+    df['sitecode'] = df['sitecode'].fillna(sitecode)
+    df['mcode'] = df['mcode'].fillna(mcode)
+
+    # some of the years are written as floats
+    df['year'] = df['year'].astype(int)
+
     # Dealing with plot id to amke each plot unique for each survey
     # some plot_id are float, some are int some are object
     if df["plot_id"].dtype == float:
         df["plot_id"] = df["plot_id"].astype(int)
     df["plot_id"] = df["plot_id"].astype(str)
+
+    # there are some leading and trailing spaces in the plot_id strings
+    df['plot_id'] = df['plot_id'].str.strip()
+    df['sitecode'] = df['sitecode'].str.strip()
+
     year_str = str(int(df['year'][0]))
     df['index_id'] = df['plot_id'] + '_' + df['sitecode'] + '_' + year_str
 
@@ -208,11 +246,27 @@ def ground_clean(df):
     # Make all the column titles lower case as there is variation amonst sites
     df.columns = df.columns.str.lower()
 
+    # Some of the columns that are the same value have missing values
+    year = df['year'].loc[df['year'].first_valid_index()]
+    sitecode = df['sitecode'].loc[df['sitecode'].first_valid_index()]
+    mcode = df['mcode'].loc[df['sitecode'].first_valid_index()]
+    df['year'] = df['year'].fillna(year)
+    df['sitecode'] = df['sitecode'].fillna(sitecode)
+    df['mcode'] = df['mcode'].fillna(mcode)
+
+    # some of the years are written as floats
+    df['year'] = df['year'].astype(int)
+
     # Dealing with plot id to amke each plot unique for each survey
     # some plot_id are float, some are int, some are object
     if df["plot_id"].dtype == float:
         df["plot_id"] = df["plot_id"].astype(int)
     df["plot_id"] = df["plot_id"].astype(str)
+
+    # there are some leading and trailing spaces in the plot_id strings
+    df['plot_id'] = df['plot_id'].str.strip()
+    df['sitecode'] = df['sitecode'].str.strip()
+
     year_str = str(int(df['year'][0]))
     df['index_id'] = df['plot_id'] + '_' + df['sitecode'] + '_' + year_str
 
@@ -220,7 +274,8 @@ def ground_clean(df):
     # frequency values are typically about a quarter of the percent (out of 25)
     if 'frequency' not in df:
         df['frequency'] = df['percent_cover'] / 4
-        print('\n\nplot ' + str(df['sitecode'][0]) + str(df['year'][0]) + ' with no frequency')
+        print('\n\nplot ' + str(df['sitecode'][0]) + str(df['year'][0])
+         + ' with no frequency')
 
     # taking the trailing and leading spaces from the features
     df['feature'] = df['feature'].apply(lambda x: x.strip())

@@ -16,7 +16,7 @@ surveys = [x for x in b if 'Metadata' not in x]
 #######################################################################
 # Getting the survey data for a specific site
 #######################################################################
-
+'''
 site_name = 'lulli'
 site_files = []
 for file_name in surveys:
@@ -50,35 +50,47 @@ ground = xls.parse(ground_string)
 #print(cover.head())
 ground = clean.ground_clean(ground)
 print(ground.head())
-
+'''
 #######################################################################
 # Getting all survery data
 #######################################################################
-'''
-for nn, ss in enumerate(surveys[:2]):
+
+for nn, ss in enumerate(surveys[11:12]):
     print('\n\n\n', nn, '\n\n\n', ss, '\n\n\n')
     xls = pd.ExcelFile(ss)
 
 
+    for name in xls.sheet_names:
+        if 'whole' in name.lower():
+            wpd_string = name
+        if 'species te' in name.lower():
+            spec_temp_string = name
+        if 'ground' in name.lower():
+            ground_string = name
 
     whole = xls.parse(wpd_string)
     whole = clean.whole_clean(whole)
-    print('\nwhole\n')
-    print(whole.head())
-    whole = clean.whole_to_ml(whole)
-    print('\nwhole for ml\n')
-    print(whole.head())
+    print(whole['year'][0])
+    if 'light' in whole.columns:
+        print(whole['light'][0])
 
-    species = xls.parse(spec_temp_string)
-    species = clean.species_clean(species)
-    cover, frequency = clean.get_abund_and_freq(species, column='desc_latin')
-    print('\ncover\n')
-    print(cover.head())
-    print('\nfrequency\n')
-    print(frequency.head())
+    print(whole.info())
+    print(whole.head(6))
+    #print('\nwhole\n')
+    #print(whole.head())
+    #whole = clean.whole_to_ml(whole)
+    #print('\nwhole for ml\n')
+    #print(whole.head())
 
-    ground = xls.parse(ground_string)
-    ground = clean.ground_clean(ground)
-    print('\nground\n')
-    print(ground.head())
-'''
+    #species = xls.parse(spec_temp_string)
+    #species = clean.species_clean(species)
+    #cover, frequency = clean.get_abund_and_freq(species, column='desc_latin')
+    #print('\ncover\n')
+    #print(cover.head())
+    #print('\nfrequency\n')
+    #print(frequency.head())
+
+    #ground = xls.parse(ground_string)
+    #ground = clean.ground_clean(ground)
+    #print('\nground\n')
+    #print(ground.head())

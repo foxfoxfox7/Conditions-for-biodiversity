@@ -35,6 +35,7 @@ for nn, ss in enumerate(surveys):
 
     ground = xls.parse(ground_string)
     ground = clean.ground_clean(ground)
+    #print(ground)
 
     df = pd.DataFrame()
 
@@ -43,6 +44,7 @@ for nn, ss in enumerate(surveys):
     ####################################################################
 
     df['freq_count'] = frequency.gt(0).sum(axis=1)
+    #print(df)
 
     extract_cols_w = ['year', 'bap_broad', 'bap_priority', 'light', 'wetness',
                       'ph', 'fertility', 'competitors', 'stress', 'rudereals',
@@ -53,7 +55,9 @@ for nn, ss in enumerate(surveys):
             df[col] = whole[col]
         except:
             df[col] = np.NaN
-
+    #print(whole)
+    #print(ground)
+    #print(df)
     extract_cols_g = ['max_height', 'median_height', 'freq-bare soil',
                       'freq-litter']
 
@@ -63,12 +67,17 @@ for nn, ss in enumerate(surveys):
         except:
             df[col] = np.NaN
 
+    #print(df)
+    #print(df.info())
+    #print(df.head(6))
+    print(df.year.dtype)
+
     data.append(df)
 
 
 total_data = pd.concat(data)
 
-print(total_data.head())
+#print(total_data.head())
 print(total_data.info())
 
-total_data.to_pickle('total_data.pkl')
+total_data.to_pickle('./my_data/total_data.pkl')
