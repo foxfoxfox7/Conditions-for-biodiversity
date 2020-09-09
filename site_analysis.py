@@ -302,34 +302,3 @@ for var in float_list:
         sharex=False)#.set_title('lalala')
     plt.show()
 '''
-########################################################################
-# positive/negatie indicator species
-########################################################################
-
-print(spec_l)
-print(len(spec_l))
-
-clean.check_names(spec_l)
-
-df_spec_t = pd.DataFrame(index=spec_l)
-df_spec_t['spec list'] = spec_l
-df_spec_t['bryophytes and lichens'] = None
-df_spec_t['dwarf shrubs'] = None
-df_spec_t['ulex or genista'] = None
-df_spec_t['non-graminae'] = None
-df_spec_t['graminoids'] = None
-df_spec_t['cg3+ positive'] = None
-df_spec_t['cg2 positive'] = None
-df_spec_t['H desirable forbs'] = None
-df_spec_t['H exotic species -ve'] = None
-df_spec_t['H Acrocarpous mosses'] = None
-df_spec_t['bracken'] = None
-df_spec_t['cg3 -ve 5'] = None
-df_spec_t['cg3 -ve 10'] = None
-df_spec_t['cg2 -ve 5'] = None
-df_spec_t['cg2 -ve 10'] = None
-df_spec_t['h -ve 1'] = None
-df_spec_t['cg -ve tree and scrub'] = None
-df_spec_t['h -ve tree and scrub'] = None
-
-print(df_spec_t.head())
