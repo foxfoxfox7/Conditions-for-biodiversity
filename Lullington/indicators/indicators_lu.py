@@ -6,7 +6,7 @@ import warnings
 warnings.filterwarnings('ignore')
 
 import sys
-sys.path.append('../..')
+sys.path.append('..')
 
 import clean
 

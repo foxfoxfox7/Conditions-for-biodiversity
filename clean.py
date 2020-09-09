@@ -189,8 +189,8 @@ def species_clean(df):
                     df.loc[i[0], col] = np.NaN
         df[col] = df[col].astype(float)
 
-    # All columns with numerical data. The values are typical so median
-    # is usually not a bad guess
+    # All columns with numerical data. The values are approximatesly
+    # gaussian distributed so median not a bad guess
     median_str = ['percent', 'frequency']
     median_cols = _get_list(df, median_str)
     for col in median_cols:
@@ -375,7 +375,8 @@ def check_names(list_of_names, min_ratio = 90):
 
     print('\nchecking for typos\n')
     for pp in list_of_names:
-        matches = fuzzywuzzy.process.extract(pp, list_of_names, limit=2, scorer=fuzzywuzzy.fuzz.token_sort_ratio)
+        matches = fuzzywuzzy.process.extract(pp, list_of_names, limit=2,
+                                scorer=fuzzywuzzy.fuzz.token_sort_ratio)
         if matches[1][1] > min_ratio:
             print(pp, ' - ', matches)
 
@@ -385,7 +386,7 @@ def replace_matches_in_column(df, column, string_to_match, min_ratio = 90):
 
     # get the top 10 closest matches to our input string
     matches = fuzzywuzzy.process.extract(string_to_match, strings,
-                                         limit=10, scorer=fuzzywuzzy.fuzz.token_sort_ratio)
+                    limit=10, scorer=fuzzywuzzy.fuzz.token_sort_ratio)
 
     # only get matches with a ratio > 90
     close_matches = [matches[0] for matches in matches if matches[1] >= min_ratio]
