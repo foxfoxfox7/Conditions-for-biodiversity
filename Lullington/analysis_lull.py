@@ -94,6 +94,7 @@ n_sites = len(data)
 df_t = pd.concat(data)
 col_list = df_t.columns.tolist()
 
+
 df_spec = pd.concat(spec_data)
 df_spec.columns = df_spec.columns.str.lower()
 spec_l = df_spec.columns.tolist()
@@ -149,7 +150,7 @@ bap_n = len(bap_t)
 ########################################################################
 # cleaning nvc
 ########################################################################
-'''
+
 # removing the inofrmation on how good the nvc fit is
 df_t['nvc_first'] = df_t['nvc_first'].str.partition(':')[0]
 df_t['nvc_first'] = df_t['nvc_first'].str.partition('-')[0]
@@ -189,13 +190,13 @@ df_nvc = df_t[df_t['nvc_first'].isin(nvc_t)]
 # may not have neough to draw valuable conclusions
 years = df_nvc['year'].unique()
 for yy in years:
-    df_t = df_nvc[df_nvc['year'] == yy]
+    df_y = df_nvc[df_nvc['year'] == yy]
     print('\n', yy, '\n')
-    print(df_t['nvc_first'].value_counts())
+    print(df_y['nvc_first'].value_counts())
 
 # number of nvc habitats of interest
 nvc_n = len(nvc_t)
-'''
+
 ########################################################################
 # plotting the difference between years in box and whisker
 ########################################################################
@@ -306,7 +307,9 @@ for var in float_list:
     plt.show()
 '''
 ########################################################################
-# indicator species
+# index = plot, columns = indicator list,
+# values = [c] coverage in each plot, [p] presence in each plot
+# normalised so that each plot coverage = 100%
 ########################################################################
 
 with open("./indicators/indicator_d.pkl", "rb") as fp:
@@ -314,27 +317,145 @@ with open("./indicators/indicator_d.pkl", "rb") as fp:
 
 print('\nindicator species lists\n', indi.keys())
 
+# the species that aren't in each survey will be NaNs
 df_spec = df_spec.fillna(0.0)
-#print(df_spec.info())
-#print(df_spec.head())
 
+# creating an empty dataframe to fill witht he indicator values
 ind_vals = pd.DataFrame(index = df_spec.index)
-#print(ind_vals.head())
-print(ind_vals.info())
 
+# go through the indicator lists, counting the cover and presence of
+# each species
 for key, value in indi.items():
-    ind_vals[key+'_c'] = df_spec[indi[key]].sum(axis=1)
-    ind_vals[key+'_c'] = ind_vals[key+'_c'].astype(int)
-    ind_vals[key+'_f'] = df_spec[indi[key]].gt(0).sum(axis=1)
+    ind_vals[key+'_[c]'] = df_spec[indi[key]].sum(axis=1)
+    ind_vals[key+'_[p]'] = df_spec[indi[key]].gt(0).sum(axis=1)
+
+########################################################################
+# indicator species analysis
+########################################################################
+
+# picking which indicator lists to investigate
+use_cols = ['(cg)']
+useless_cols = ['[p]', 'neg10', 'gram', '2_pos']
+
+cg_indicators = clean._get_list(ind_vals, use_cols, not_list = useless_cols)
+ind_n = len(cg_indicators)
+
+# df_ia has the same data as ind_vals but only the indicator lists
+# of interest
+df_ia = pd.DataFrame()
+for ind in cg_indicators:
+    df_ia[ind] = ind_vals[ind]
+
+# including the year and nvc columns so that the plots can be diveded
+df_ia['year'] = df_t['year']
+df_ia['nvc'] = df_t['nvc_first']
+
+# eliminating not chalk grassland plots
+df_cg = df_ia[df_ia['nvc'] == 'CG']
+
+# getting the years of the surveys and the number of plots
+# for each year. the number of plots has to be reversed
+years = df_cg['year'].unique().tolist()
+year_nums = df_cg['year'].value_counts().tolist()
+year_nums = year_nums[::-1]
+
+# making a new dataframe whre the coumns are the years
+# index is the chosen indicator lists
+# values are the sum of all the plots for each year
+df_ps = pd.DataFrame()
+df_cs = pd.DataFrame()
+for ii, yy in enumerate(years):
+    df_ps[yy] = df_cg[df_cg['year'] == yy].astype(bool).sum()
+    df_cs[yy] = df_cg[df_cg['year'] == yy].sum()
+
+    # removing the year and nvc columns as they error with transformatio
+    try:
+        df_ps = df_ps.drop(['year', 'nvc'], axis = 0)
+        df_cs = df_cs.drop(['year', 'nvc'], axis = 0)
+    except:
+        pass
+
+    # normalising according to the number of sites
+    df_ps[str(yy)+'_n'] = (df_ps[yy] / year_nums[ii]) * 100
+    df_cs[str(yy)+'_n'] = df_cs[yy] / year_nums[ii]
+
+print('\nnumber of sites with indicator species in + percentage\n')
+print(df_ps)
+print('\ncover of sites with indicator species, normalised by number of plots\n')
+print(df_cs)
+
+#fig, ax = plt.subplots(ncols=ind_n, figsize=(20, 6), sharey=False)
+#for ii, ind in enumerate(cg_indicators):
+#    sns.boxplot(data = df_cg, x='year', y=ind, ax=ax[ii])
+#plt.show()
+
+########################################################################
+# indicator species analysis
+########################################################################
+
+# the dataframe to put only the species form an ind list in
+ind_spec = pd.DataFrame()
+
+# going through all the species in an indicator list only keeping them
+for sp in indi['(cg)3_pos']:
+    try:
+        ind_spec[sp] = df_spec[sp]
+    except:
+        pass
+
+# including the year and nvc columns so that the plots can be split
+ind_spec['year'] = df_t['year']
+ind_spec['nvc'] = df_t['nvc_first']
+
+# eliminating not chalk grassland plots
+ind_spec = ind_spec[ind_spec['nvc'] == 'CG']
+
+# getting the years of the surveys and the number of plots
+# for each year. the number of plots has to be reversed
+years = df_cg['year'].unique().tolist()
+year_nums = df_cg['year'].value_counts().tolist()
+year_nums = year_nums[::-1]
+
+# making a new dataframe whre the columns are the years
+# index is the species in an indicator list
+# values are the sum of each species across all the plots for each year
+df_ps = pd.DataFrame()
+df_cs = pd.DataFrame()
+for yy in years:
+    df_ps[yy] = ind_spec[ind_spec['year'] == yy].astype(bool).sum()
+    df_cs[yy] = ind_spec[ind_spec['year'] == yy].sum()
+
+    # removing the year and nvc columns as they error with transformatio
+    try:
+        df_ps = df_ps.drop(['year', 'nvc'], axis = 0)
+        df_cs = df_cs.drop(['year', 'nvc'], axis = 0)
+    except:
+        pass
+
+    # normalising according to the number of sites
+    df_ps[str(yy)+'_n'] = (df_ps[yy] / year_nums[ii]) * 100
+    df_cs[str(yy)+'_n'] = df_cs[yy] / year_nums[ii]
+
+df_ps.loc['Total']= df_ps.sum()
+df_cs.loc['Total']= df_cs.sum()
+
+print('\nnumber of sites each indicator speces is in and percentage\n')
+print(df_ps)
+print('\ncover of the sites by each species, and accross all plots\n')
+print(df_cs)
+
+imp_sp = pd.DataFrame()
+for yy in years:
+    imp_sp[yy] = df_cs[str(yy)+'_n']
+imp_sp = imp_sp.drop('Total', axis=0)
+
+imp_sp = imp_sp.loc[(imp_sp > 1.5).any(axis=1)]
+imp_sp = imp_sp.transpose()
+imp_sp['Species'] = imp_sp.index
 
 
+print(imp_sp)
 
-
-#ind_vals['cg3_pos_c'] = df_spec[indi['cg3_pos']].sum(axis=1)
-#ind_vals['cg3_pos_c'] = ind_vals['cg3_pos_c'].astype(int)
-#ind_vals['cg3_pos_f'] = df_spec[indi['cg3_pos']].gt(0).sum(axis=1)
-
-
-
-print(ind_vals.head())
-print(ind_vals.info())
+df = imp_sp.melt('Species', var_name='% cover',  value_name='Year')
+g = sns.factorplot(x="Species", y='Year', hue='% cover', data=df)
+plt.show()
