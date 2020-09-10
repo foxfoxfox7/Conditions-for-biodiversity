@@ -24,14 +24,12 @@ def _get_list(df, list_names, not_list = []):
             if r_str.lower() in col.lower() :
                 choose_cols.append(col)
 
-    res = []
-    for choice in choose_cols:
-        res.append(choice)
-        for nl in not_list:
-            if nl.lower() in choice.lower():
-                del res[-1]
+    # goes through each of the strings in not_list and looks for them in
+    # the choose_cols
+    for nl in not_list:
+        choose_cols = [ii for ii in choose_cols if nl.lower() not in ii.lower()]
 
-    return res
+    return choose_cols
 
 ########################################################################
 # initial cleaning
@@ -235,6 +233,9 @@ def get_abund_and_freq(df, column):
     df_abund = df_abund.groupby(level=0, axis=1).sum()
     df_freq = pd.concat(frequency_plots, axis=1)
     df_freq = df_freq.groupby(level=0, axis=1).sum()
+
+    # normalises so that each quadrate cover adds up to 100%
+    df_abund = df_abund.div((df_abund.sum(axis=1)/100), axis=0)
 
     return df_abund, df_freq
 
