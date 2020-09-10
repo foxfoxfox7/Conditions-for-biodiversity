@@ -6,7 +6,7 @@ import warnings
 warnings.filterwarnings('ignore')
 
 import sys
-sys.path.append('..')
+sys.path.append('../..')
 
 import clean
 
@@ -52,18 +52,18 @@ print(df.info())
 # bryophytes and lichens
 #(cover % maintained in heathland)
 bryophytes_lichens = []
-find_in_spec(df, bryophytes_lichens, 'h_bryophytes_lichens')
+find_in_spec(df, bryophytes_lichens, '(h)_bryophytes_lichens')
 print(df.info())
 
 # Total Ulex and/or Genista spp. heath
 #cover <50%, with Ulex europaeus <25%
 ulex_genista = []
-find_in_spec(df, ulex_genista, 'h_ulex_genista')
+find_in_spec(df, ulex_genista, '(h)_ulex_genista')
 
 # non graminae cg3+ and cg2
 # (40-90%)
 non_graminae = []
-find_in_spec(df, non_graminae, 'cg_non-graminae')
+find_in_spec(df, non_graminae, '(cg)_non-graminae')
 
 # dwarf shrubs in heathland
 # at least two present
@@ -71,14 +71,14 @@ dw_shrubs = ['Arctostaphylos uva-ursi', 'Calluna vulgaris', 'Empetrum nigrum',
     'Erica ciliaris', 'Eucalyptus cinerea', 'Erica tetralix', 'Erica vagans',
     'Genista anglica', 'Genista pilosa', 'Ulex gallii', 'Ulmus minor',
     'Vaccinium myrtillus', 'Vaccinium vitis-idaea']
-find_in_spec(df, dw_shrubs, 'h dwarf shrubs')
+find_in_spec(df, dw_shrubs, '(h) dwarf shrubs')
 
 # graminoids heathland.
 # (1 frequent and 2 occasional)
 h_graminoids = ['Agrostis', 'Ammophila arenaria', 'Carex',
     'Danthonia decumbens', 'Deschampsia flexuosa', 'Festuca',
     'Molinia caerulea', 'Nardus stricta', 'Trichophorum cespitosum']
-find_in_spec(df, h_graminoids, 'h graminoids')
+find_in_spec(df, h_graminoids, '(h) graminoids')
 
 # cg3 positive indicators
 #(Bromopsis erecta (if CG3) or Brachypodium
@@ -94,7 +94,7 @@ cg3_pos = ['Brachypodium pinnatum', 'Bromopsis erecta', 'Anthyllis vulneraria',
     'Polygala', 'Primula veris', 'Sanguisorba minor',
     'Scabiosa columbaria', 'Serratula tinctoria', 'Succisa pratensis',
     'Viola hirta', 'Thymus']
-find_in_spec(df, cg3_pos, 'cg3_pos')
+find_in_spec(df, cg3_pos, '(cg)3_pos')
 
 # cg2 positive indicators
 # (At least four species/taxa frequent plus at
@@ -107,7 +107,7 @@ cg2_pos = ['Anthyllis vulneraria', 'Asperula cynanchica',
     'Pilosella officinarum', 'Plantago media', 'Polygala',
     'Primula veris', 'Sanguisorba minor', 'Scabiosa columbaria',
     'Serratula tinctoria', 'Succisa pratensis', 'Thymus']
-find_in_spec(df, cg2_pos, 'cg2_pos')
+find_in_spec(df, cg2_pos, '(cg)2_pos')
 
 # heathland desirable forbs
 # (At least 2 species at least occasional throughout the sward)
@@ -118,39 +118,39 @@ forbs = ['Armeria maritima', 'Galium saxatile', 'Genista anglica',
     'Thymus praecox', 'Viola riviniana']
 limestone_forbs = ['Filipendula vulgaris', 'Galium verum',
     'Helianthemum nummularium', 'Sanguisorba minor']
-find_in_spec(df, forbs, 'h forbs')
+find_in_spec(df, forbs, '(h) forbs')
 
 # heathland negative exotic species
 # (<1%)
 exotic = ['Rhododendron ponticum', 'Gaultheria shallon', 'Fallopia japonica']
-find_in_spec(df, exotic, 'h exotic species')
+find_in_spec(df, exotic, '(h) exotic species')
 
 # Acrocarpous mosses heathland negative
 # (occasional)
 acro_mosses = ['Campylopus introflexus']
-find_in_spec(df, acro_mosses, 'h Acrocarpous mosses')
+find_in_spec(df, acro_mosses, '(h) Acrocarpous mosses')
 
 # bracken heathland negative
 # (<10%)
 bracken = ['Pteridium aquilinum']
-find_in_spec(df, bracken, 'h bracken')
+find_in_spec(df, bracken, '(h) bracken')
 
 #cg3 negative
 # (<5%)
 cg3_neg5 = ['Cirsium arvense', 'Cirsium vulgare', 'Rumex crispus',
     'Rumex obtusifolius', 'Senecio jacobaea', 'Urtica dioica']
 
-find_in_spec(df, cg3_neg5, 'cg3_neg5')
+find_in_spec(df, cg3_neg5, '(cg)3_neg5')
 
 # cg3 -ve
 # <10%
 cg3_neg10 = ['Brachypodium pinnatum']
-find_in_spec(df, cg3_neg10, 'cg3_neg10')
+find_in_spec(df, cg3_neg10, '(cg)3_neg10')
 
 #cg2 negative (<10%)
 # <10%
 cg2_neg10 = ['Brachypodium pinnatum', 'Bromopsis erecta']
-find_in_spec(df, cg2_neg10, 'cg2_neg10')
+find_in_spec(df, cg2_neg10, '(cg)2_neg10')
 
 # heathland negative herbaceous species
 # (<1%)
@@ -160,17 +160,17 @@ herbacous_neg = ['Cirsium arvense', 'Digitalis purpurea', 'Epilobium',
     'Chamerion angustifolium', 'Juncus effusus', 'Juncus squarrosus',
     'Ranunculus', 'Senecio', 'Rumex obtusifolius', 'Urtica dioica',
     'Urtica dioica', 'Jacobaea vulgaris', 'Cirsium']
-find_in_spec(df, herbacous_neg, 'h herbaceous')
+find_in_spec(df, herbacous_neg, '(h) herbaceous')
 
 # cg3 tree and scrub species excluding juniperus communis
 # (no more than 5%)
 tree_scrub = ['Betula', 'Prunus spinosa', 'Pinus', 'Rubus',
     'Sarothamnus scoparius', 'Quercus', 'Hippophae rhamnoides']
-find_in_spec(df, tree_scrub, 'cg tree scrub')
+find_in_spec(df, tree_scrub, '(cg) tree scrub')
 
 # heathland negative species tree and scrub
 # (<15%)
-find_in_spec(df, tree_scrub, 'cg tree scrub')
+find_in_spec(df, tree_scrub, '(cg) tree scrub')
 
 ########################################################################
 #
@@ -181,7 +181,7 @@ find_in_spec(df, tree_scrub, 'cg tree scrub')
 #print(df.head())
 print(df.info())
 
-#df.to_excel('indicator_form.xlsx', index = False)
+df.to_excel('indicator_form.xlsx', index = False)
 cols = df.columns.tolist()
 
 # converts the 1s in the df to the names of the species
