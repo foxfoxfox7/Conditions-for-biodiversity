@@ -102,7 +102,7 @@ spec_l = df_spec.columns.tolist()
 ########################################################################
 # cleaning bap broad
 ########################################################################
-'''
+
 # getting the columns whihc are of object type (to format the strings)
 obj_list = [col for col in col_list if df_t[col].dtype == object]
 print('\nlist of object columns\n', obj_list)
@@ -144,9 +144,17 @@ bap_t = bap_types.index.tolist()
 print('\nimportant habitats\n', bap_t)
 df_bap = df_t[df_t['bap_broad'].isin(bap_t)]
 
+# showing the values counts of the habitats per year as some years
+# may not have neough to draw valuable conclusions
+years = df_bap['year'].unique()
+for yy in years:
+    df_y = df_bap[df_bap['year'] == yy]
+    print('\n', yy, '\n')
+    print(df_y['bap_broad'].value_counts())
+
 # number of bap habitats of interest
 bap_n = len(bap_t)
-'''
+
 ########################################################################
 # cleaning nvc
 ########################################################################
@@ -154,13 +162,24 @@ bap_n = len(bap_t)
 # removing the inofrmation on how good the nvc fit is
 df_t['nvc_first'] = df_t['nvc_first'].str.partition(':')[0]
 df_t['nvc_first'] = df_t['nvc_first'].str.partition('-')[0]
+#df_t['nvc_tot'] = df_t['nvc_first']
+
 
 # the subdivisions are too specific to use. not enough samples
-nums = ['0','1','2','3','4','5','6','7','8','9']
-for nn in nums:
-    df_t['nvc_first'] = df_t['nvc_first'].str.partition(nn)[0]
+for i in df_t['nvc_first'].iteritems():
+    df_t.loc[i[0], 'nvc_first'] = re.sub(r'\D+$', '', i[1])
 
-df_t['nvc_first'] = df_t['nvc_first'].replace({
+# Then split into jus the numbers and letters seperately for nvc analasi
+df_t['nvc_num'] = df_t['nvc_first']
+for i in df_t['nvc_num'].iteritems():
+    df_t.loc[i[0], 'nvc_num'] = re.sub(r'(^[^\d]+)', '', i[1])
+
+df_t['nvc_let'] = df_t['nvc_first']
+for i in df_t['nvc_let'].iteritems():
+    df_t.loc[i[0], 'nvc_let'] = re.sub(r"[^a-zA-Z]", '', i[1])
+
+df_t['nvc_let'] = df_t['nvc_let'].str.lower()
+df_t['nvc_let'] = df_t['nvc_let'].replace({
     "w": 'woodlands and scrub',
     'm': 'mires',
     "h": 'heathes',
@@ -174,25 +193,25 @@ df_t['nvc_first'] = df_t['nvc_first'].replace({
     'mc': 'maritime cliff',
     'ov': 'vegetation of open habitats'
     })
-
+print(df_t.head())
 # counting how many of each NVC types has been assigned
 # only taking the types that have enough samples
-nvc_types = df_t['nvc_first'].value_counts()
+nvc_types = df_t['nvc_let'].value_counts()
 print(nvc_types)
 nvc_types = nvc_types[nvc_types >=9]
 nvc_t = nvc_types.index.tolist()
 
 # leaving only the parts of the df with the important habitats
 print('\nimportant nvc types\n', nvc_t)
-df_nvc = df_t[df_t['nvc_first'].isin(nvc_t)]
+df_nvc = df_t[df_t['nvc_let'].isin(nvc_t)]
 
-# plotting the values counts of the habitats per year as some years
+# showing the values counts of the habitats per year as some years
 # may not have neough to draw valuable conclusions
 years = df_nvc['year'].unique()
 for yy in years:
     df_y = df_nvc[df_nvc['year'] == yy]
     print('\n', yy, '\n')
-    print(df_y['nvc_first'].value_counts())
+    print(df_y['nvc_let'].value_counts())
 
 # number of nvc habitats of interest
 nvc_n = len(nvc_t)
@@ -200,7 +219,7 @@ nvc_n = len(nvc_t)
 ########################################################################
 # plotting the difference between years in box and whisker
 ########################################################################
-'''
+
 def plot_by_bap_vs_year(y_col, title = '', save = False, show = True):
 
     fig, axes = plt.subplots(ncols=bap_n, sharey=True, dpi=250)
@@ -240,7 +259,7 @@ def plot_by_nvc_vs_year(y_col, title = '', save = False, show = True):
     fig, axes = plt.subplots(ncols=nvc_n, sharey=True, dpi=250)#
     fig.suptitle(site_name + ' - ' + title)
     for i, ax in zip(range(10), axes.flat):
-        sns.boxplot(data = df_nvc[df_nvc['nvc_first'] == nvc_t[i]],
+        sns.boxplot(data = df_nvc[df_nvc['nvc_let'] == nvc_t[i]],
             x='year', y=y_col, ax=ax).set_title(nvc_t[i], fontsize=6)
 
     # have to go through each axes individually to set the angle
@@ -270,11 +289,11 @@ plot_by_nvc_vs_year('competitors', 'competitors')
 plot_by_nvc_vs_year('stress', 'stress')
 plot_by_nvc_vs_year('rudereals', 'rudereals')
 plot_by_nvc_vs_year('freq-litter', 'freq-litter')
-'''
+
 ########################################################################
 # looking for correlations across different habitats
 ########################################################################
-'''
+
 # finding the columns with numerical entries to compare
 float_list = [col for col in col_list if df[col].dtype == float]
 print('\nlist of float columns\n', float_list)
@@ -302,14 +321,13 @@ float_list = [val for val in float_list if val not in drop_l]
 print(float_list)
 
 for var in float_list:
-    sns.lmplot(data=df_nvc, x='freq_count', y=var, col='nvc_first',
+    sns.lmplot(data=df_nvc, x='freq_count', y=var, col='nvc_let',
         sharex=False)#.set_title('lalala')
     plt.show()
-'''
+
 ########################################################################
 # index = plot, columns = indicator list,
 # values = [c] coverage in each plot, [p] presence in each plot
-# normalised so that each plot coverage = 100%
 ########################################################################
 
 with open("./indicators/indicator_d.pkl", "rb") as fp:
@@ -348,16 +366,16 @@ for ind in cg_indicators:
 
 # including the year and nvc columns so that the plots can be diveded
 df_ia['year'] = df_t['year']
-df_ia['nvc'] = df_t['nvc_first']
+df_ia['nvc'] = df_t['nvc_let']
 
 # eliminating not chalk grassland plots
-df_cg = df_ia[df_ia['nvc'] == 'CG']
+df_cg = df_ia[df_ia['nvc'] == 'calcicolous grasslands']
 
 # getting the years of the surveys and the number of plots
-# for each year. the number of plots has to be reversed
+# for each year. makes a df and then tkaes the numbers in the nvc col
 years = df_cg['year'].unique().tolist()
-year_nums = df_cg['year'].value_counts().tolist()
-year_nums = year_nums[::-1]
+df_cg_y_n = df_cg.groupby('year').count()
+year_nums = df_cg_y_n['nvc'].tolist()
 
 # making a new dataframe whre the coumns are the years
 # index is the chosen indicator lists
@@ -384,10 +402,10 @@ print(df_ps)
 print('\ncover of sites with indicator species, normalised by number of plots\n')
 print(df_cs)
 
-#fig, ax = plt.subplots(ncols=ind_n, figsize=(20, 6), sharey=False)
-#for ii, ind in enumerate(cg_indicators):
-#    sns.boxplot(data = df_cg, x='year', y=ind, ax=ax[ii])
-#plt.show()
+fig, ax = plt.subplots(ncols=ind_n, figsize=(20, 6), sharey=False)
+for ii, ind in enumerate(cg_indicators):
+    sns.boxplot(data = df_cg, x='year', y=ind, ax=ax[ii])
+plt.show()
 
 ########################################################################
 # indicator species analysis
@@ -405,16 +423,16 @@ for sp in indi['(cg)3_pos']:
 
 # including the year and nvc columns so that the plots can be split
 ind_spec['year'] = df_t['year']
-ind_spec['nvc'] = df_t['nvc_first']
+ind_spec['nvc'] = df_t['nvc_let']
 
 # eliminating not chalk grassland plots
-ind_spec = ind_spec[ind_spec['nvc'] == 'CG']
+ind_spec = ind_spec[ind_spec['nvc'] == 'calcicolous grasslands']
 
 # getting the years of the surveys and the number of plots
 # for each year. the number of plots has to be reversed
 years = df_cg['year'].unique().tolist()
-year_nums = df_cg['year'].value_counts().tolist()
-year_nums = year_nums[::-1]
+df_cg_y_n = df_cg.groupby('year').count()
+year_nums = df_cg_y_n['nvc'].tolist()
 
 # making a new dataframe whre the columns are the years
 # index is the species in an indicator list
@@ -444,18 +462,137 @@ print(df_ps)
 print('\ncover of the sites by each species, and accross all plots\n')
 print(df_cs)
 
+df_ps = df_ps.drop('Total', axis=0)
+df_cs = df_cs.drop('Total', axis=0)
+
 imp_sp = pd.DataFrame()
 for yy in years:
     imp_sp[yy] = df_cs[str(yy)+'_n']
-imp_sp = imp_sp.drop('Total', axis=0)
 
-imp_sp = imp_sp.loc[(imp_sp > 1.5).any(axis=1)]
+imp_sp = imp_sp.loc[(imp_sp > 3.5).any(axis=1)]
 imp_sp = imp_sp.transpose()
 imp_sp['Species'] = imp_sp.index
-
 
 print(imp_sp)
 
 df = imp_sp.melt('Species', var_name='% cover',  value_name='Year')
 g = sns.factorplot(x="Species", y='Year', hue='% cover', data=df)
 plt.show()
+
+########################################################################
+# nvc_type analysis
+########################################################################
+
+for nt in nvc_t:
+    dfn = df_t[df_t['nvc_let'] == nt]
+
+    print('\nnumber of ', nt, ' plots in each year\n')
+    print(dfn['year'].value_counts())
+
+    # separating the years, counting instances of each nvc
+    df_nvc_l = []
+    for yy in years:
+        dfy = dfn[dfn['year'] == yy]
+        val_c = dfy['nvc_num'].value_counts()
+        df_nvc_l.append(val_c)
+
+    # creating the total df for the nvc type, renaming columns to years
+    df_nvc_a = pd.concat(df_nvc_l, axis = 1)
+    df_nvc_a = df_nvc_a.fillna(0)
+    df_nvc_a.columns = years
+
+    print('\nnumber of ', nt,  ' subtype type in each year\n')
+    print(df_nvc_a)
+
+    # normalizing across columns so its a percentage
+    for yy in years:
+        df_nvc_a[yy] = (df_nvc_a[yy] / df_nvc_a[yy].sum()) * 100
+
+    df_nvc_a = df_nvc_a.transpose()
+    df_nvc_a.plot(kind='bar', stacked=True).set_title(nt)
+    plt.show()
+
+########################################################################
+# nvc species analysis
+########################################################################
+'''
+#91–100% 10
+#76–90% 9
+#51–75% 8
+#34–50% 7
+#26–33% 6
+#11–25% 5
+#4–10% 4
+#<4% (many individuals) 3
+#<4% (several individuals) 2
+#<4% (few individuals) 1
+
+#I = 1–20% (i.e. 1 stand in 5) scarce
+#II = 21–40% occasional
+#III = 41–60% frequent
+#IV = 61–80% constant
+#V = 81–100% constant
+
+with open("../my_data/nvc_spec.pkl", "rb") as fp:
+    nvc_cat_spec = pickle.load(fp)
+
+# To take from teh dataframe only a specific habitat
+#not_cg_cols = clean._get_list(nvc_cat_spec, [''], ['CG'])
+#cg_cols = clean._get_list(nvc_cat_spec, ['CG'])
+#nvc_cat_spec = nvc_cat_spec.drop(not_cg_cols, axis=1)
+
+#print(nvc_cat_spec.columns.tolist())
+
+#test_list = clean._get_list(nvc_cat_spec, 'CG2')
+#print(test_list)
+
+
+def make_nvc_df(df, nvc_type):
+
+    drop_cols = clean._get_list(df, [''], [nvc_type])
+    df = df.drop(drop_cols, axis = 1)
+    df = df.dropna()
+    further_drop = clean._get_list(df, ['[c]'])
+    df = df.drop(further_drop, axis = 1)
+
+    # setting up the nvc list df so that it matches the plots species
+    df[nvc_type] = df[nvc_type].str.strip()
+    df[nvc_type] = df[nvc_type].str.lower()
+    df = df.set_index(nvc_type)
+
+    return df
+
+
+df_n2 = make_nvc_df(nvc_cat_spec, 'CG2')
+
+# including the nvc type to only take the type matching the selected nvc
+print(df_t.head())
+exit()
+df_spec['nvc'] = df_t['nvc_let']
+df_spec = df_spec[df_spec['nvc'] == 'calcicolous grasslands']
+df_spec = df_spec.drop('nvc', axis = 1)
+
+
+df_spec['year'] = df_t['year']
+
+
+# rearanging the plots df so the index is the species
+df_spec_trans = df_spec.transpose()
+
+# finding the species that are in the plots df and the nvc df
+in_both = [sp for sp in df_spec_trans.index.tolist() if sp in df_n2.index.tolist()]
+
+# Arranging the indexes of nvc df and plots df so they are the same
+df_spec_trans = df_spec_trans[df_spec_trans.index.isin(in_both)]
+df_spec_trans = df_spec_trans.sort_index()
+df_n2 = df_n2[df_n2.index.isin(in_both)]
+df_n2 = df_n2.sort_index()
+
+
+df_comb = pd.concat([df_n2, df_spec_trans], axis = 1)
+print(df_comb)
+
+#df_n2 = df_n2[df_n2.index.isin(all_cg_spec)]
+#print(df_n2)
+
+'''
