@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import pickle
+import re
 import csv
 
 import warnings
@@ -51,6 +52,92 @@ print(lookup_d['bap_broad'])
 with open("./my_data/lookup.pkl", "wb") as fp:
     pickle.dump(lookup_d, fp)
 '''
+########################################################################
+# saving the data in nvc species lists
+########################################################################
+
+xls = pd.ExcelFile('./docs/NVC-floristic-tables.xls')
+print(xls.sheet_names)
+df_flortab = xls.parse('NVCfloristictables (26.3.2008)')
+
+# rearranging the data so we get a column for each habitat and a list
+# of the species beneath it
+df_s_piv = df_flortab.pivot(columns = 'Community or sub-community code',
+    values = 'Species name or special variable ')
+all_cols = df_s_piv.columns.tolist()
+
+#keep_cols = [col for col in all_cols if re.search(r'\d+$', col)]
+drop_cols = [col for col in all_cols if not re.search(r'\d+$', col)]
+df_s_piv = df_s_piv.drop(drop_cols, axis=1)
+
+# doing the same for the typical cover percentages
+df_c_piv = df_flortab.pivot(columns = 'Community or sub-community code',
+    values = 'Species constancy value')
+df_c_piv = df_c_piv.drop(drop_cols, axis=1)
+
+# doing the same for the maximum abundances
+df_a_piv = df_flortab.pivot(columns = 'Community or sub-community code',
+    values = 'Maximum abundance of species')
+df_a_piv = df_a_piv.drop(drop_cols, axis=1)
+
+# getting rid of all the nans as well as putting the species list
+# at the top of the column
+final_cols = []
+for nvc in df_s_piv.columns:
+    df = pd.DataFrame()
+    print('extracting', nvc, 'columns\n')
+
+    # THE SPECIES COLUMN
+
+    # gets rid of all the NaNs that would be present when combining
+    spec_l = []
+    for i in df_s_piv[nvc].iteritems():
+        # only unique values and not nan
+        if str(i[1]) != 'nan':
+            spec_l.append(i[1])
+    sp_l_len = len(spec_l)
+    df[nvc] = spec_l
+
+    # THE COVER COLUMN
+
+    cov_l = []
+    for i in df_c_piv[nvc].iteritems():
+        # only unique values and not nan
+        if str(i[1]) != 'nan':#!= 'nan'
+            cov_l.append(i[1])
+    cov_l_len = len(cov_l)
+
+    # the species list is longest as the bottom ones are physical
+    # characteristics whihc dont have cover or abundance vals
+    for i in range(sp_l_len - cov_l_len):
+        cov_l.append(np.NaN)
+    df[nvc+'_[c]'] = cov_l
+
+    # THE ABUNDANCE COLUMN
+
+    abund_l = []
+    for i in df_a_piv[nvc].iteritems():
+        # only unique values and not nan
+        if str(i[1]) != 'nan':
+            abund_l.append(i[1])
+    abund_l_len = len(abund_l)
+
+    for i in range(sp_l_len - abund_l_len):
+        abund_l.append(np.NaN)
+    df[nvc+'_[a]'] = abund_l
+
+    final_cols.append(df)
+
+df_cg_final = pd.concat(final_cols, axis = 1)
+
+print(df_cg_final)
+
+#print(df_cg_final)
+#print(df_cg_final.info())
+#print(df_cg_final['A1'].dropna().tolist())
+
+with open("./my_data/nvc_spec.pkl", "wb") as fp:
+    pickle.dump(df_cg_final, fp)
 
 ########################################################################
 # saving a total data dataframe (all the surveys)
@@ -113,7 +200,7 @@ total_data.to_pickle('./my_data/total_data.pkl')
 ########################################################################
 # saving indicator species for a specific site
 ########################################################################
-
+'''
 site_name = 'lullington'
 site_files = []
 for file_name in surveys:
@@ -155,3 +242,4 @@ df_sp_save['spec_list'] = spec_l
 #     wr.writerow(spec_l)
 
 df_sp_save.to_csv('./Lullington/Lullington_sp.csv', index = False)
+'''
