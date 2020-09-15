@@ -47,6 +47,7 @@ def find_in_spec(df, indicators, col_name = 'dummy'):
 # entering data from fct forms and matching species list
 #
 ########################################################################
+'''
 print(df.info())
 
 # bryophytes and lichens
@@ -57,7 +58,7 @@ print(df.info())
 
 # Total Ulex and/or Genista spp. heath
 #cover <50%, with Ulex europaeus <25%
-ulex_genista = []
+ulex_genista = ['ulex', 'Genista']
 find_in_spec(df, ulex_genista, '(h)_ulex_genista')
 
 # non graminae cg3+ and cg2
@@ -171,7 +172,7 @@ find_in_spec(df, tree_scrub, '(cg) tree scrub')
 # heathland negative species tree and scrub
 # (<15%)
 find_in_spec(df, tree_scrub, '(cg) tree scrub')
-
+'''
 ########################################################################
 #
 # printing out new dataframe
