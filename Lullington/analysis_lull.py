@@ -79,8 +79,8 @@ for site in site_files:
         except:
             df[col] = np.NaN
 
-    extract_cols_g = ['max_height', 'median_height', 'freq-bare soil',
-                      'freq-litter']
+    extract_cols_g = ['max_height', 'median_height', 'cover-bare soil',
+                      'cover-litter']
     for col in extract_cols_g:
         try:
             df[col] = ground[col]
@@ -98,6 +98,8 @@ col_list = df_t.columns.tolist()
 df_spec = pd.concat(spec_data)
 df_spec.columns = df_spec.columns.str.lower()
 spec_l = df_spec.columns.tolist()
+
+print(df_t['year'].value_counts())
 
 ########################################################################
 # cleaning bap broad
@@ -196,6 +198,9 @@ df_t['nvc_let'] = df_t['nvc_let'].replace({
 print(df_t.head())
 # counting how many of each NVC types has been assigned
 # only taking the types that have enough samples
+
+#df_t['nvc_let'] = df_t['nvc_let'].str.capitalize()
+
 nvc_types = df_t['nvc_let'].value_counts()
 print(nvc_types)
 nvc_types = nvc_types[nvc_types >=9]
@@ -242,89 +247,104 @@ def plot_by_bap_vs_year(y_col, title = '', save = False, show = True):
     if show:
         plt.show()
 
-plot_by_bap_vs_year('freq_count', 'species_count')
-plot_by_bap_vs_year('max_height', 'sward_max')
-plot_by_bap_vs_year('median_height', 'sward med')
-plot_by_bap_vs_year('freq-bare soil', 'bare_soil_freq')
-plot_by_bap_vs_year('light', 'light')
-plot_by_bap_vs_year('wetness', 'wetness')
-plot_by_bap_vs_year('ph', 'ph')
-plot_by_bap_vs_year('fertility', 'fertility')
-plot_by_bap_vs_year('competitors', 'competitors')
-plot_by_bap_vs_year('stress', 'stress')
-plot_by_bap_vs_year('rudereals', 'rudereals')
+#plot_by_bap_vs_year('freq_count', 'species_count')
+#plot_by_bap_vs_year('max_height', 'sward_max')
+#plot_by_bap_vs_year('median_height', 'sward med')
+#plot_by_bap_vs_year('cover-bare soil', 'bare_soil_freq')
+#plot_by_bap_vs_year('light', 'light')
+#plot_by_bap_vs_year('wetness', 'wetness')
+#plot_by_bap_vs_year('ph', 'ph')
+#plot_by_bap_vs_year('fertility', 'fertility')
+#plot_by_bap_vs_year('competitors', 'competitors')
+#plot_by_bap_vs_year('stress', 'stress')
+#plot_by_bap_vs_year('rudereals', 'rudereals')
 
-def plot_by_nvc_vs_year(y_col, title = '', save = False, show = True):
+def plot_by_nvc_vs_year(
+        y_col, title = '', save = False, show = True, fig_name = ''
+        ):
 
-    fig, axes = plt.subplots(ncols=nvc_n, sharey=True, dpi=250)#
-    fig.suptitle(site_name + ' - ' + title)
+    fig, axes = plt.subplots(ncols=nvc_n, sharey=True, figsize=(10, 4), dpi=240)#
+    fig.suptitle(title, fontsize=14)
     for i, ax in zip(range(10), axes.flat):
         sns.boxplot(data = df_nvc[df_nvc['nvc_let'] == nvc_t[i]],
-            x='year', y=y_col, ax=ax).set_title(nvc_t[i], fontsize=6)
+            x='year', y=y_col, ax=ax).set_title(nvc_t[i], fontsize=9)
+
+
 
     # have to go through each axes individually to set the angle
     for ax in fig.axes:
         plt.sca(ax)
         plt.xticks(rotation=45)
+        ax.set(ylim=(0, 11))
 
     # turns the y axis off for all plots apart from first to save space
     for nn in range(nvc_n-1):
         axes[nn+1].get_yaxis().set_visible(False)
 
     if save:
-        plt.savefig('./figures/' + site_name + '_' + title + '.png')
+        plt.savefig('./figures/' + fig_name + '.png')
     if show:
         plt.show()
 
+#df_nvc['Number of species'] = df_nvc['freq_count']
+#plot_by_nvc_vs_year('Number of species', 'Species richness', save=True, fig_name='lull_spec_count')
 
-plot_by_nvc_vs_year('freq_count', 'species_count')
-plot_by_nvc_vs_year('max_height', 'sward_max')
-plot_by_nvc_vs_year('median_height', 'sward med')
-plot_by_nvc_vs_year('freq-bare soil', 'bare_soil_freq')
-plot_by_nvc_vs_year('light', 'light')
-plot_by_nvc_vs_year('wetness', 'wetness')
-plot_by_nvc_vs_year('ph', 'ph')
-plot_by_nvc_vs_year('fertility', 'fertility')
-plot_by_nvc_vs_year('competitors', 'competitors')
-plot_by_nvc_vs_year('stress', 'stress')
-plot_by_nvc_vs_year('rudereals', 'rudereals')
-plot_by_nvc_vs_year('freq-litter', 'freq-litter')
+
+#df_nvc['Height (cm)'] = df_nvc['median_height']
+#df_nvc.loc[df_nvc['year'] == 2014, 'Height (cm)'] = np.NaN
+#plot_by_nvc_vs_year('Height (cm)', 'Vegetation height', save = True, fig_name='heights')
+
+#df_nvc['Bare soil cover (%)'] = df_nvc['cover-bare soil']
+#plot_by_nvc_vs_year('Bare soil cover (%)', 'Bare soil', save=True, fig_name='bare_soil')
+
+#df_nvc['Litter cover (%)'] = df_nvc['cover-litter']
+#plot_by_nvc_vs_year('Litter cover (%)', 'Litter', save=True, fig_name='litter')
+
+#plot_by_nvc_vs_year('max_height', 'sward_max')
+#plot_by_nvc_vs_year('light', 'light')
+#plot_by_nvc_vs_year('wetness', 'wetness')
+#plot_by_nvc_vs_year('ph', 'ph')
+#plot_by_nvc_vs_year('fertility', 'fertility')
+#plot_by_nvc_vs_year('competitors', 'competitors')
+#plot_by_nvc_vs_year('stress', 'stress')
+#plot_by_nvc_vs_year('rudereals', 'rudereals')
+
 
 ########################################################################
 # looking for correlations across different habitats
 ########################################################################
-
+'''
 # finding the columns with numerical entries to compare
 float_list = [col for col in col_list if df[col].dtype == float]
 print('\nlist of float columns\n', float_list)
 
 # dropping a few columns that don't have any meaningful information
-drop_l = ['freq-litter', 'median_height', 'max_height', 'year']
+drop_l = ['cover-litter', 'median_height', 'max_height', 'year']
 df_bap = df_bap.drop(drop_l, axis=1)
 float_list = [val for val in float_list if val not in drop_l]
 print(float_list)
 
-for var in float_list:
-    sns.lmplot(data=df_bap, x='freq_count', y=var, col='bap_broad',
-        sharex=False)
-    plt.show()
+#for var in float_list:
+#    sns.lmplot(data=df_bap, x='freq_count', y=var, col='bap_broad',
+#        sharex=False)
+#    plt.show()
 
 # finding the columns with numerical entries to compare
 float_list = [col for col in col_list if df[col].dtype == float]
 print('\nlist of float columns\n', float_list)
 
 # dropping a few columns that don't have any meaningful information
-drop_l = ['freq-litter', 'median_height', 'max_height', 'year',
-    'freq-bare soil']
+drop_l = ['cover-litter', 'median_height', 'max_height', 'year',
+    'cover-bare soil']
 df_nvc = df_nvc.drop(drop_l, axis=1)
 float_list = [val for val in float_list if val not in drop_l]
 print(float_list)
 
-for var in float_list:
-    sns.lmplot(data=df_nvc, x='freq_count', y=var, col='nvc_let',
-        sharex=False)#.set_title('lalala')
-    plt.show()
-
+#for var in float_list:
+#    sns.lmplot(data=df_nvc, x='freq_count', y=var, col='nvc_let',
+#        sharex=False)#.set_title('lalala')
+#    plt.show()
+'''
 ########################################################################
 # index = plot, columns = indicator list,
 # values = [c] coverage in each plot, [p] presence in each plot
@@ -344,16 +364,20 @@ ind_vals = pd.DataFrame(index = df_spec.index)
 # go through the indicator lists, counting the cover and presence of
 # each species
 for key, value in indi.items():
+    #print(df_spec.head())
+    #print(indi[key])
+    #print(df_spec[indi[key]].sum(axis=1))
+    #exit()
     ind_vals[key+'_[c]'] = df_spec[indi[key]].sum(axis=1)
     ind_vals[key+'_[p]'] = df_spec[indi[key]].gt(0).sum(axis=1)
 
 ########################################################################
 # indicator species analysis
 ########################################################################
-
+'''
 # picking which indicator lists to investigate
 use_cols = ['(cg)']
-useless_cols = ['[p]', 'neg10', 'gram', '2_pos']
+useless_cols = ['[p]']#, 'gram', '2_pos']#, 'neg10'
 
 cg_indicators = clean._get_list(ind_vals, use_cols, not_list = useless_cols)
 ind_n = len(cg_indicators)
@@ -406,11 +430,11 @@ fig, ax = plt.subplots(ncols=ind_n, figsize=(20, 6), sharey=False)
 for ii, ind in enumerate(cg_indicators):
     sns.boxplot(data = df_cg, x='year', y=ind, ax=ax[ii])
 plt.show()
-
+'''
 ########################################################################
 # indicator species analysis
 ########################################################################
-
+'''
 # the dataframe to put only the species form an ind list in
 ind_spec = pd.DataFrame()
 
@@ -439,7 +463,8 @@ year_nums = df_cg_y_n['nvc'].tolist()
 # values are the sum of each species across all the plots for each year
 df_ps = pd.DataFrame()
 df_cs = pd.DataFrame()
-for yy in years:
+for ii, yy in enumerate(years):
+#for yy in years:
     df_ps[yy] = ind_spec[ind_spec['year'] == yy].astype(bool).sum()
     df_cs[yy] = ind_spec[ind_spec['year'] == yy].sum()
 
@@ -478,15 +503,26 @@ print(imp_sp)
 df = imp_sp.melt('Species', var_name='% cover',  value_name='Year')
 g = sns.factorplot(x="Species", y='Year', hue='% cover', data=df)
 plt.show()
-
+'''
 ########################################################################
 # nvc_type analysis
 ########################################################################
+'''
+print(nvc_t)
+df_t['nvc_num'] = df_t['nvc_num'].replace({
+    '6': 'CG6',
+    '4': 'CG4',
+    "3": 'CG3',
+    '2': 'CG2'
+#    '6': 'H6',
+#    '7': 'H7',
+#    '8': 'H8'
+    })
 
-for nt in nvc_t:
-    dfn = df_t[df_t['nvc_let'] == nt]
+def plot_NVC_makeup(df, nvc_type, save=False, fig_name='dummy', savename='d'):
+    dfn = df[df['nvc_let'] == nvc_type]
 
-    print('\nnumber of ', nt, ' plots in each year\n')
+    print('\nnumber of ', nvc_type, ' plots in each year\n')
     print(dfn['year'].value_counts())
 
     # separating the years, counting instances of each nvc
@@ -501,17 +537,39 @@ for nt in nvc_t:
     df_nvc_a = df_nvc_a.fillna(0)
     df_nvc_a.columns = years
 
-    print('\nnumber of ', nt,  ' subtype type in each year\n')
+    print('\nnumber of ', nvc_type,  ' subtype type in each year\n')
     print(df_nvc_a)
 
     # normalizing across columns so its a percentage
     for yy in years:
         df_nvc_a[yy] = (df_nvc_a[yy] / df_nvc_a[yy].sum()) * 100
 
+    fig, ax = plt.subplots(dpi=200, figsize=(10,4))
     df_nvc_a = df_nvc_a.transpose()
-    df_nvc_a.plot(kind='bar', stacked=True).set_title(nt)
+    df_nvc_a.plot(kind='bar', stacked=True, ax = ax).set_title(fig_name)
+    plt.ylabel('Percentage of total')
+    plt.xticks(rotation=0)
+
+    if save:
+        plt.savefig('./figures/' + savename + '.png')
     plt.show()
 
+plot_NVC_makeup(df_t, 'calcicolous grasslands', save=True,
+    fig_name='NVC sub-communities for Calcicolous grasslands',
+    savename='CG_nvc_sub')
+
+#plot_NVC_makeup(df_t, 'heathes', save=True,
+#    fig_name='NVC sub-communities for Heathes',
+#    savename='H_nvc_sub')
+
+plot_NVC_makeup(df_t, 'mesotrophic grasslands', save=False,
+    fig_name='NVC sub-communities for Mesotrophic grasslands',
+    savename='CG_nvc_sub')
+
+plot_NVC_makeup(df_t, 'woodlands and scrub', save=False,
+    fig_name='NVC sub-communities for Woodlands and scrub',
+    savename='CG_nvc_sub')
+'''
 ########################################################################
 # nvc species analysis
 ########################################################################
@@ -567,7 +625,6 @@ df_n2 = make_nvc_df(nvc_cat_spec, 'CG2')
 
 # including the nvc type to only take the type matching the selected nvc
 print(df_t.head())
-exit()
 df_spec['nvc'] = df_t['nvc_let']
 df_spec = df_spec[df_spec['nvc'] == 'calcicolous grasslands']
 df_spec = df_spec.drop('nvc', axis = 1)
@@ -594,5 +651,89 @@ print(df_comb)
 
 #df_n2 = df_n2[df_n2.index.isin(all_cg_spec)]
 #print(df_n2)
-
 '''
+########################################################################
+# individual species
+########################################################################
+
+spec_ind = ['ulex', 'Genista']
+spec_ind = ['achillea millefolium']
+habitat = 'calcicolous grasslands'
+#habitat = 'headth'
+
+spec_cols = clean._get_list(df_spec, spec_ind)
+print(spec_cols)
+
+# the dataframe to put only the species form an ind list in
+df_spec_ind = pd.DataFrame()
+
+
+# going through all the species in an indicator list only keeping them
+for sp in spec_cols:
+    try:
+        df_spec_ind[sp] = df_spec[sp]
+    except:
+        pass
+
+# including the year and nvc columns so that the plots can be split
+df_spec_ind['year'] = df_t['year']
+df_spec_ind['nvc'] = df_t['nvc_let']
+
+
+print(df_spec.head())
+print(df_spec_ind)
+
+df_spec_ind = df_spec_ind[df_spec_ind['nvc'] == habitat]
+
+# getting the years of the surveys and the number of plots
+# for each year. the number of plots has to be reversed
+years = df_spec_ind['year'].unique().tolist()
+df_y_n = df_spec_ind.groupby('year').count()
+year_nums = df_y_n['nvc'].tolist()
+
+# making a new dataframe whre the columns are the years
+# index is the species in an indicator list
+# values are the sum of each species across all the plots for each year
+df_ps = pd.DataFrame()
+df_cs = pd.DataFrame()
+for ii, yy in enumerate(years):
+    df_ps[yy] = df_spec_ind[df_spec_ind['year'] == yy].astype(bool).sum()
+    df_cs[yy] = df_spec_ind[df_spec_ind['year'] == yy].sum()
+
+    # removing the year and nvc columns as they error with transformatio
+    try:
+        df_ps = df_ps.drop(['year', 'nvc'], axis = 0)
+        df_cs = df_cs.drop(['year', 'nvc'], axis = 0)
+    except:
+        pass
+
+    # normalising according to the number of sites
+    df_ps[str(yy)+'_n'] = (df_ps[yy] / year_nums[ii]) * 100
+    df_cs[str(yy)+'_n'] = df_cs[yy] / year_nums[ii]
+
+df_ps.loc['Total']= df_ps.sum()
+df_cs.loc['Total']= df_cs.sum()
+
+print('\nnumber of sites each indicator speces is in and percentage\n')
+print(df_ps)
+print('\ncover of the sites by each species, and accross all plots\n')
+print(df_cs)
+
+#df_ps = df_ps.drop('Total', axis=0)
+#df_cs = df_cs.drop('Total', axis=0)
+
+imp_sp = pd.DataFrame()
+for yy in years:
+    imp_sp[yy] = df_cs[str(yy)+'_n']
+
+imp_sp = imp_sp.loc[(imp_sp > 0.1).any(axis=1)]
+imp_sp = imp_sp.transpose()
+imp_sp['Species'] = imp_sp.index
+
+print(imp_sp)
+
+imp_sp = imp_sp.transpose()
+
+df = imp_sp.melt('Species', var_name='% cover',  value_name='Year')
+g = sns.factorplot(y="% cover", x='Year', hue='Species', data=df)
+plt.show()
