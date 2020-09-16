@@ -114,7 +114,7 @@ def whole_clean(df):
     df = df.set_index('index_id')
 
     # Make all the column titles lower case as there is variation amonst sites
-    df.columns = df.columns.str.lower()
+    #df.columns = df.columns.str.lower()
 
     return df
 
@@ -235,7 +235,7 @@ def get_abund_and_freq(df, column):
     df_freq = df_freq.groupby(level=0, axis=1).sum()
 
     # normalises so that each quadrate cover adds up to 100%
-    #df_abund = df_abund.div((df_abund.sum(axis=1)/100), axis=0)
+    df_abund = df_abund.div((df_abund.sum(axis=1)/1), axis=0)
 
     return df_abund, df_freq
 

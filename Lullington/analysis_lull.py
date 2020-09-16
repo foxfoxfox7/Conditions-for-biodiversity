@@ -364,10 +364,6 @@ ind_vals = pd.DataFrame(index = df_spec.index)
 # go through the indicator lists, counting the cover and presence of
 # each species
 for key, value in indi.items():
-    #print(df_spec.head())
-    #print(indi[key])
-    #print(df_spec[indi[key]].sum(axis=1))
-    #exit()
     ind_vals[key+'_[c]'] = df_spec[indi[key]].sum(axis=1)
     ind_vals[key+'_[p]'] = df_spec[indi[key]].gt(0).sum(axis=1)
 
@@ -376,8 +372,9 @@ for key, value in indi.items():
 ########################################################################
 '''
 # picking which indicator lists to investigate
-use_cols = ['(cg)']
-useless_cols = ['[p]']#, 'gram', '2_pos']#, 'neg10'
+use_cols = ['(cg)']#, '(cg) tree scrub']
+useless_cols = ['[p]']#, 'exotic species', 'Acrocarpous mosses', 'bracken',
+#   'herbaceous', 'ulex', 'dwarf']
 
 cg_indicators = clean._get_list(ind_vals, use_cols, not_list = useless_cols)
 ind_n = len(cg_indicators)
@@ -388,12 +385,17 @@ df_ia = pd.DataFrame()
 for ind in cg_indicators:
     df_ia[ind] = ind_vals[ind]
 
+# Changing the first column name for the figure
+#cg_indicators = ['Proportion of plant cover', '(h) graminoids_[c]', '(h) forbs_[c]', '(cg) tree scrub_[c]']
+#df_ia.columns = cg_indicators
+#print(df_ia.columns.tolist())
+
 # including the year and nvc columns so that the plots can be diveded
 df_ia['year'] = df_t['year']
 df_ia['nvc'] = df_t['nvc_let']
 
 # eliminating not chalk grassland plots
-df_cg = df_ia[df_ia['nvc'] == 'calcicolous grasslands']
+df_cg = df_ia[df_ia['nvc'] == 'calcicolous grasslands'] #calcicolous grasslands
 
 # getting the years of the surveys and the number of plots
 # for each year. makes a df and then tkaes the numbers in the nvc col
@@ -426,10 +428,24 @@ print(df_ps)
 print('\ncover of sites with indicator species, normalised by number of plots\n')
 print(df_cs)
 
-fig, ax = plt.subplots(ncols=ind_n, figsize=(20, 6), sharey=False)
-for ii, ind in enumerate(cg_indicators):
-    sns.boxplot(data = df_cg, x='year', y=ind, ax=ax[ii])
-plt.show()
+H_titles = ['Bryohpytes and Lichens', 'Graminoids', 'Forbs', 'Tree and scrub']
+
+#fig, ax = plt.subplots(ncols=ind_n, sharey=False, figsize=(14, 6), dpi = 140)
+#fig.suptitle('Plant composition in calcicolous grasslands communities', fontsize=20)
+#for ii, ind in enumerate(cg_indicators):
+#    sns.boxplot(data = df_cg, x='year', y=ind, ax=ax[ii],
+#        showfliers = False).set_title(H_titles[ii], fontsize=14)
+#
+#for ax in fig.axes:
+#    plt.sca(ax)
+    #plt.xticks(rotation=45)
+    #ax.set(ylim=(0, 11))
+#
+#for nn in range(nvc_n-1):
+#    fig.axes[nn+1].set(ylabel=None)#, fontsize=18)
+#    #fig.axes[nn+1].get_yaxis().set_visible(False)
+#plt.savefig('./figures/cg_plant_comp.png')
+#plt.show()
 '''
 ########################################################################
 # indicator species analysis
@@ -437,6 +453,8 @@ plt.show()
 '''
 # the dataframe to put only the species form an ind list in
 ind_spec = pd.DataFrame()
+
+print(indi.keys())
 
 # going through all the species in an indicator list only keeping them
 for sp in indi['(cg)3_pos']:
@@ -450,7 +468,7 @@ ind_spec['year'] = df_t['year']
 ind_spec['nvc'] = df_t['nvc_let']
 
 # eliminating not chalk grassland plots
-ind_spec = ind_spec[ind_spec['nvc'] == 'calcicolous grasslands']
+df_cg = ind_spec[ind_spec['nvc'] == 'calcicolous grasslands']
 
 # getting the years of the surveys and the number of plots
 # for each year. the number of plots has to be reversed
@@ -465,8 +483,8 @@ df_ps = pd.DataFrame()
 df_cs = pd.DataFrame()
 for ii, yy in enumerate(years):
 #for yy in years:
-    df_ps[yy] = ind_spec[ind_spec['year'] == yy].astype(bool).sum()
-    df_cs[yy] = ind_spec[ind_spec['year'] == yy].sum()
+    df_ps[yy] = df_cg[df_cg['year'] == yy].astype(bool).sum()
+    df_cs[yy] = df_cg[df_cg['year'] == yy].sum()
 
     # removing the year and nvc columns as they error with transformatio
     try:
@@ -494,14 +512,16 @@ imp_sp = pd.DataFrame()
 for yy in years:
     imp_sp[yy] = df_cs[str(yy)+'_n']
 
-imp_sp = imp_sp.loc[(imp_sp > 3.5).any(axis=1)]
+imp_sp = imp_sp.loc[(imp_sp > 0.015).any(axis=1)]
 imp_sp = imp_sp.transpose()
 imp_sp['Species'] = imp_sp.index
 
 print(imp_sp)
 
 df = imp_sp.melt('Species', var_name='% cover',  value_name='Year')
-g = sns.factorplot(x="Species", y='Year', hue='% cover', data=df)
+
+fig, ax = plt.subplots()
+ax = sns.factorplot(x="Species", y='Year', hue='% cover', data=df)
 plt.show()
 '''
 ########################################################################
@@ -658,15 +678,15 @@ print(df_comb)
 
 spec_ind = ['ulex', 'Genista']
 spec_ind = ['achillea millefolium']
+#spec_ind = indi['(h) forbs']
 habitat = 'calcicolous grasslands'
-#habitat = 'headth'
+#habitat = 'heath'
 
 spec_cols = clean._get_list(df_spec, spec_ind)
 print(spec_cols)
 
 # the dataframe to put only the species form an ind list in
 df_spec_ind = pd.DataFrame()
-
 
 # going through all the species in an indicator list only keeping them
 for sp in spec_cols:
@@ -678,10 +698,6 @@ for sp in spec_cols:
 # including the year and nvc columns so that the plots can be split
 df_spec_ind['year'] = df_t['year']
 df_spec_ind['nvc'] = df_t['nvc_let']
-
-
-print(df_spec.head())
-print(df_spec_ind)
 
 df_spec_ind = df_spec_ind[df_spec_ind['nvc'] == habitat]
 
@@ -719,21 +735,21 @@ print(df_ps)
 print('\ncover of the sites by each species, and accross all plots\n')
 print(df_cs)
 
-#df_ps = df_ps.drop('Total', axis=0)
-#df_cs = df_cs.drop('Total', axis=0)
+df_ps = df_ps.drop('Total', axis=0)
+df_cs = df_cs.drop('Total', axis=0)
 
 imp_sp = pd.DataFrame()
 for yy in years:
     imp_sp[yy] = df_cs[str(yy)+'_n']
 
-imp_sp = imp_sp.loc[(imp_sp > 0.1).any(axis=1)]
+imp_sp = imp_sp.loc[(imp_sp > 0.0001).any(axis=1)]
 imp_sp = imp_sp.transpose()
 imp_sp['Species'] = imp_sp.index
 
 print(imp_sp)
 
-imp_sp = imp_sp.transpose()
 
 df = imp_sp.melt('Species', var_name='% cover',  value_name='Year')
-g = sns.factorplot(y="% cover", x='Year', hue='Species', data=df)
+g = sns.factorplot(x="Species", y='Year', hue='% cover', data=df)
 plt.show()
+
