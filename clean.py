@@ -234,8 +234,8 @@ def get_abund_and_freq(df, column):
     df_freq = pd.concat(frequency_plots, axis=1)
     df_freq = df_freq.groupby(level=0, axis=1).sum()
 
-    # normalises so that each quadrate cover adds up to 100%
-    df_abund = df_abund.div((df_abund.sum(axis=1)/1), axis=0)
+    # normalises so that each quadrat cover adds up to 100%
+    #df_abund = df_abund.div((df_abund.sum(axis=1)/1), axis=0)
 
     return df_abund, df_freq
 
@@ -398,12 +398,103 @@ def replace_matches_in_column(df, column, string_to_match, min_ratio = 90):
     # replace all rows with close matches with the input matches
     df.loc[rows_with_matches, column] = string_to_match
 
+def clean_bap_broad(df, lookup):
+    '''
+    Cleans the bap_broad column whihc is a useful way to group the plots
+    There are lots of typos in this column as it is all made of
+    surveyor input strings. Must also pass the dictionary with bap list
+    '''
+
+    col_list = df.columns.tolist()
+
+    # getting the columns whihc are of object type (to format the strings)
+    obj_list = [col for col in col_list if df[col].dtype == object]
+    print('\nlist of object columns\n', obj_list)
+
+    # turning all strings to lower case due to discrepencies in input
+    for col in obj_list:
+        df[col] = df[col].str.lower()
+
+    # looking at all the unique entries in bap_broad
+    baps = df['bap_broad'].unique()
+    baps = [x for x in baps if str(x) != 'nan']
+    print(len(baps), ' unique bap_broad habitats\n', sorted(baps))
+    # checking if any of them have names that are similat in case of typo
+    check_names(baps, min_ratio = 80)
+
+    # from the dictionary, looking at the proper names for bap_broad
+    print(len(lookup['bap_broad']), ' lookup bap_broad\n', sorted(lookup['bap_broad']))
+
+    # These are the names which have typos which need to be replaced
+    replace_matches_in_column(df, 'bap_broad', 'supralittoral sediment')
+    replace_matches_in_column(df, 'bap_broad', 'fen, marsh and swamp', 80)
+    replace_matches_in_column(df, 'bap_broad', 'dwarf shrub heath')
+    replace_matches_in_column(df, 'bap_broad', 'bogs', 85)
+
+    # looking at the names afterward to double check for any more typos
+    baps = df['bap_broad'].unique()
+    baps = [x for x in baps if str(x) != 'nan']
+    print(len(baps), ' unique bap_broad habitats\n', sorted(baps))
+
+    return df
+
+def clean_nvc(df):
+    '''
+    nvc column has lots of data in it. this function removes the
+    useless stuff and separates the useful stuff
+    '''
+
+    # removing the inofrmation on how good the nvc fit is
+    df['nvc_first'] = df['nvc_first'].str.partition(':')[0]
+    df['nvc_first'] = df['nvc_first'].str.partition('-')[0]
+    #df['nvc_tot'] = df['nvc_first']
+
+    # the subdivisions are too specific to use. not enough samples
+    for i in df['nvc_first'].iteritems():
+        df.loc[i[0], 'nvc_first'] = re.sub(r'\D+$', '', i[1])
+
+    # Then split into jus the numbers and letters seperately for nvc analasi
+    df['nvc_num'] = df['nvc_first']
+    for i in df['nvc_num'].iteritems():
+        df.loc[i[0], 'nvc_num'] = re.sub(r'(^[^\d]+)', '', i[1])
+
+    df['nvc_let'] = df['nvc_first']
+    for i in df['nvc_let'].iteritems():
+        df.loc[i[0], 'nvc_let'] = re.sub(r"[^a-zA-Z]", '', i[1])
+
+    df['nvc_let'] = df['nvc_let'].str.lower()
+    df['nvc_let'] = df['nvc_let'].replace({
+        "w": 'woodlands and scrub',
+        'm': 'mires',
+        "h": 'heathes',
+        'mg': 'mesotrophic grasslands',
+        'cg': 'calcicolous grasslands',
+        'u': 'calcifugous grasslands',
+        'a': 'aquatic communities',
+        's': 'swamps and tall herb ferns',
+        'sd': 'shingle, sandline and sand-dune',
+        'sm': 'salt marsh',
+        'mc': 'maritime cliff',
+        'ov': 'vegetation of open habitats'
+        })
+
+    #df['nvc_let'] = df['nvc_let'].str.capitalize()
+
+    return df
+
+
 ########################################################################
 # Prep for machine learning
 ########################################################################
 
 def whole_to_ml(df):
+    '''
+    this function for turning the whole plot data sheet into a df
+    which can be used for ml was made right at the begninng.
+    as such it needs updating
+    '''
 
+    # Removes a few of the oclumsn taht arent useful for ml
     remove_strings = ['year', 'sitecode']
     remove_cols = _get_list(df, remove_strings)
     df = df.drop(remove_cols, axis = 1)
@@ -418,6 +509,7 @@ def whole_to_ml(df):
         dummies = []
         for col in dummies_cols:
             dummies.append(pd.get_dummies(df[col]))
+        # Some of the sheets have certain code columns and some dont
         try:
             site_dummies = pd.concat(dummies, axis = 1)
             df = df.drop(dummies_cols, axis = 1)
@@ -427,6 +519,7 @@ def whole_to_ml(df):
         except ValueError:
             print('no scode columns')
 
+    # giving the new columns instructive names
     restring_strings = ['code']
     restring_cols = _get_list(df, restring_strings)
     whole2 = pd.DataFrame({col:str(col)+'=' for col in df},

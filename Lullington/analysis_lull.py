@@ -94,7 +94,6 @@ n_sites = len(data)
 df_t = pd.concat(data)
 col_list = df_t.columns.tolist()
 
-
 df_spec = pd.concat(spec_data)
 df_spec.columns = df_spec.columns.str.lower()
 spec_l = df_spec.columns.tolist()
@@ -105,34 +104,8 @@ print(df_t['year'].value_counts())
 # cleaning bap broad
 ########################################################################
 
-# getting the columns whihc are of object type (to format the strings)
-obj_list = [col for col in col_list if df_t[col].dtype == object]
-print('\nlist of object columns\n', obj_list)
-
-# turning all strings to lower case due to discrepencies in input
-for col in obj_list:
-    df_t[col] = df_t[col].str.lower()
-
-# looking at all the unique entries in bap_broad
-baps = df_t['bap_broad'].unique()
-baps = [x for x in baps if str(x) != 'nan']
-print(len(baps), ' unique bap_broad habitats\n', sorted(baps))
-# checking if any of them have names that are similat in case of typo
-clean.check_names(baps, min_ratio = 80)
-
-# from the dictionary, looking at the proper names for bap_broad
-print(len(lookup['bap_broad']), ' lookup bap_broad\n', sorted(lookup['bap_broad']))
-
-# These are the names which have typos which need to be replaced
-clean.replace_matches_in_column(df_t, 'bap_broad', 'supralittoral sediment')
-clean.replace_matches_in_column(df_t, 'bap_broad', 'fen, marsh and swamp', 80)
-clean.replace_matches_in_column(df_t, 'bap_broad', 'dwarf shrub heath')
-clean.replace_matches_in_column(df_t, 'bap_broad', 'bogs', 85)
-
-# looking at the names afterward to double check for any more typos
-baps = df_t['bap_broad'].unique()
-baps = [x for x in baps if str(x) != 'nan']
-print(len(baps), ' unique bap_broad habitats\n', sorted(baps))
+# Cleans all typos in the bap broad column
+df_t = clean.clean_bap_broad(df_t, lookup)
 
 # looking at how many times each of the unique bap_broad habitats occur
 # many are not in the list so i think they are mistakenly assigned
@@ -161,46 +134,11 @@ bap_n = len(bap_t)
 # cleaning nvc
 ########################################################################
 
-# removing the inofrmation on how good the nvc fit is
-df_t['nvc_first'] = df_t['nvc_first'].str.partition(':')[0]
-df_t['nvc_first'] = df_t['nvc_first'].str.partition('-')[0]
-#df_t['nvc_tot'] = df_t['nvc_first']
+# separates the parts of the nvc column so they are usable
+df_t = clean.clean_nvc(df_t)
 
-
-# the subdivisions are too specific to use. not enough samples
-for i in df_t['nvc_first'].iteritems():
-    df_t.loc[i[0], 'nvc_first'] = re.sub(r'\D+$', '', i[1])
-
-# Then split into jus the numbers and letters seperately for nvc analasi
-df_t['nvc_num'] = df_t['nvc_first']
-for i in df_t['nvc_num'].iteritems():
-    df_t.loc[i[0], 'nvc_num'] = re.sub(r'(^[^\d]+)', '', i[1])
-
-df_t['nvc_let'] = df_t['nvc_first']
-for i in df_t['nvc_let'].iteritems():
-    df_t.loc[i[0], 'nvc_let'] = re.sub(r"[^a-zA-Z]", '', i[1])
-
-df_t['nvc_let'] = df_t['nvc_let'].str.lower()
-df_t['nvc_let'] = df_t['nvc_let'].replace({
-    "w": 'woodlands and scrub',
-    'm': 'mires',
-    "h": 'heathes',
-    'mg': 'mesotrophic grasslands',
-    'cg': 'calcicolous grasslands',
-    'u': 'calcifugous grasslands',
-    'a': 'aquatic communities',
-    's': 'swamps and tall herb ferns',
-    'sd': 'shingle, sandline and sand-dune',
-    'sm': 'salt marsh',
-    'mc': 'maritime cliff',
-    'ov': 'vegetation of open habitats'
-    })
-print(df_t.head())
 # counting how many of each NVC types has been assigned
 # only taking the types that have enough samples
-
-#df_t['nvc_let'] = df_t['nvc_let'].str.capitalize()
-
 nvc_types = df_t['nvc_let'].value_counts()
 print(nvc_types)
 nvc_types = nvc_types[nvc_types >=9]
@@ -370,10 +308,10 @@ for key, value in indi.items():
 ########################################################################
 # indicator species analysis
 ########################################################################
-'''
+
 # picking which indicator lists to investigate
 use_cols = ['(cg)']#, '(cg) tree scrub']
-useless_cols = ['[p]']#, 'exotic species', 'Acrocarpous mosses', 'bracken',
+useless_cols = ['[p]', 'neg', 'non', 'tree']#, 'exotic species', 'Acrocarpous mosses', 'bracken',
 #   'herbaceous', 'ulex', 'dwarf']
 
 cg_indicators = clean._get_list(ind_vals, use_cols, not_list = useless_cols)
@@ -428,6 +366,36 @@ print(df_ps)
 print('\ncover of sites with indicator species, normalised by number of plots\n')
 print(df_cs)
 
+# making yearly columns with the plants coverge and presence
+imp_sp = pd.DataFrame()
+for yy in years:
+    imp_sp[yy] = df_cs[str(yy)+'_n']
+
+#imp_sp = imp_sp.loc[(imp_sp > 0.015).any(axis=1)]
+imp_sp = imp_sp.transpose()
+print(imp_sp.head())
+
+new_col_names = ['CG3/4/5 positive indicators', 'CG2 positive indicators']
+imp_sp.columns = new_col_names
+
+print(imp_sp.head())
+imp_sp['Species'] = imp_sp.index
+
+
+print(imp_sp)
+
+df = imp_sp.melt('Species', var_name='% cover',  value_name='Year')
+
+g = sns.factorplot(x="Species", y='Year',
+     hue='% cover', data=df, size=4, aspect=2)
+g._legend.set_title('Indicator lists')
+g.set(xlabel="Year", ylabel = "coverage (%)", ylim=(0,None))
+#g.fig.suptitle('% of plots containing each chalk grassland positive indicator species', fontsize=16)
+g.fig.suptitle('Mean coverage of the posive indicator species', fontsize=16)
+plt.savefig('./figures/cg_pos_cov.png')
+plt.show()
+exit()
+
 H_titles = ['Bryohpytes and Lichens', 'Graminoids', 'Forbs', 'Tree and scrub']
 
 #fig, ax = plt.subplots(ncols=ind_n, sharey=False, figsize=(14, 6), dpi = 140)
@@ -446,18 +414,16 @@ H_titles = ['Bryohpytes and Lichens', 'Graminoids', 'Forbs', 'Tree and scrub']
 #    #fig.axes[nn+1].get_yaxis().set_visible(False)
 #plt.savefig('./figures/cg_plant_comp.png')
 #plt.show()
-'''
+
 ########################################################################
 # indicator species analysis
 ########################################################################
-'''
+
 # the dataframe to put only the species form an ind list in
 ind_spec = pd.DataFrame()
 
-print(indi.keys())
-
 # going through all the species in an indicator list only keeping them
-for sp in indi['(cg)3_pos']:
+for sp in indi['(h) forbs']:
     try:
         ind_spec[sp] = df_spec[sp]
     except:
@@ -468,7 +434,7 @@ ind_spec['year'] = df_t['year']
 ind_spec['nvc'] = df_t['nvc_let']
 
 # eliminating not chalk grassland plots
-df_cg = ind_spec[ind_spec['nvc'] == 'calcicolous grasslands']
+df_cg = ind_spec[ind_spec['nvc'] == 'heathes']#calcicolous grasslands
 
 # getting the years of the surveys and the number of plots
 # for each year. the number of plots has to be reversed
@@ -500,6 +466,7 @@ for ii, yy in enumerate(years):
 df_ps.loc['Total']= df_ps.sum()
 df_cs.loc['Total']= df_cs.sum()
 
+#pd.set_option('display.max_rows', 500)
 print('\nnumber of sites each indicator speces is in and percentage\n')
 print(df_ps)
 print('\ncover of the sites by each species, and accross all plots\n')
@@ -508,22 +475,30 @@ print(df_cs)
 df_ps = df_ps.drop('Total', axis=0)
 df_cs = df_cs.drop('Total', axis=0)
 
+# making yearly columns with the plants coverge and presence
 imp_sp = pd.DataFrame()
 for yy in years:
-    imp_sp[yy] = df_cs[str(yy)+'_n']
+    imp_sp[yy] = df_ps[str(yy)+'_n']
 
 imp_sp = imp_sp.loc[(imp_sp > 0.015).any(axis=1)]
 imp_sp = imp_sp.transpose()
 imp_sp['Species'] = imp_sp.index
 
+imp_sp.columns = [x.capitalize() for x in imp_sp.columns]
+
 print(imp_sp)
 
 df = imp_sp.melt('Species', var_name='% cover',  value_name='Year')
 
-fig, ax = plt.subplots()
-ax = sns.factorplot(x="Species", y='Year', hue='% cover', data=df)
+g = sns.factorplot(x="Species", y='Year',
+     hue='% cover', data=df, size=4, aspect=2)
+g._legend.set_title('Species')
+g.set(xlabel="Year", ylabel = "% of plots")
+#g.fig.suptitle('% of plots containing each chalk grassland positive indicator species', fontsize=16)
+g.fig.suptitle('Mean coverage of dwarf shrub spp.', fontsize=16)
+#plt.savefig('./figures/h_shrub_spp.png')
 plt.show()
-'''
+exit()
 ########################################################################
 # nvc_type analysis
 ########################################################################
@@ -675,7 +650,7 @@ print(df_comb)
 ########################################################################
 # individual species
 ########################################################################
-
+'''
 spec_ind = ['ulex', 'Genista']
 spec_ind = ['achillea millefolium']
 #spec_ind = indi['(h) forbs']
@@ -742,7 +717,7 @@ imp_sp = pd.DataFrame()
 for yy in years:
     imp_sp[yy] = df_cs[str(yy)+'_n']
 
-imp_sp = imp_sp.loc[(imp_sp > 0.0001).any(axis=1)]
+imp_sp = imp_sp.loc[(imp_sp > 0.0).any(axis=1)]
 imp_sp = imp_sp.transpose()
 imp_sp['Species'] = imp_sp.index
 
@@ -752,4 +727,4 @@ print(imp_sp)
 df = imp_sp.melt('Species', var_name='% cover',  value_name='Year')
 g = sns.factorplot(x="Species", y='Year', hue='% cover', data=df)
 plt.show()
-
+'''
