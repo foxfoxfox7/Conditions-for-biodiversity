@@ -398,22 +398,22 @@ exit()
 
 H_titles = ['Bryohpytes and Lichens', 'Graminoids', 'Forbs', 'Tree and scrub']
 
-#fig, ax = plt.subplots(ncols=ind_n, sharey=False, figsize=(14, 6), dpi = 140)
-#fig.suptitle('Plant composition in calcicolous grasslands communities', fontsize=20)
-#for ii, ind in enumerate(cg_indicators):
-#    sns.boxplot(data = df_cg, x='year', y=ind, ax=ax[ii],
-#        showfliers = False).set_title(H_titles[ii], fontsize=14)
-#
-#for ax in fig.axes:
-#    plt.sca(ax)
+fig, ax = plt.subplots(ncols=ind_n, sharey=False, figsize=(14, 6), dpi = 140)
+fig.suptitle('Plant composition in calcicolous grasslands communities', fontsize=20)
+for ii, ind in enumerate(cg_indicators):
+    sns.boxplot(data = df_cg, x='year', y=ind, ax=ax[ii],
+        showfliers = False).set_title(H_titles[ii], fontsize=14)
+
+for ax in fig.axes:
+    plt.sca(ax)
     #plt.xticks(rotation=45)
     #ax.set(ylim=(0, 11))
-#
-#for nn in range(nvc_n-1):
-#    fig.axes[nn+1].set(ylabel=None)#, fontsize=18)
-#    #fig.axes[nn+1].get_yaxis().set_visible(False)
+
+for nn in range(nvc_n-1):
+    fig.axes[nn+1].set(ylabel=None)#, fontsize=18)
+    #fig.axes[nn+1].get_yaxis().set_visible(False)
 #plt.savefig('./figures/cg_plant_comp.png')
-#plt.show()
+plt.show()
 
 ########################################################################
 # indicator species analysis

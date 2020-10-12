@@ -117,7 +117,7 @@ nvc_n = len(nvc_t)
 ########################################################################
 # comparing how values change over time across different habitats
 ########################################################################
-'''
+
 fig_num = len(bap_t)
 
 # plots the changes of number of species per plot for each bap habitat
@@ -136,7 +136,7 @@ for nvc in nvc_t:
     sns.boxplot(data=df2, x='year', y='freq_count'
         ).set_title(nvc+' - '+str(df2['nvc_first'].size)+' samples')
     plt.show()
-'''
+
 ########################################################################
 # looking for correlations across different habitats
 ########################################################################
@@ -158,19 +158,19 @@ df_bap['Fertility'] = df_bap['fertility']
 df_bap['Wetness'] = df_bap['wetness']
 df_bap['Number of species'] = df_bap['freq_count']
 
-vv = len(float_list2)
-fig, ax = plt.subplots(ncols=vv, figsize=(12, 4), dpi=200)
-fig.suptitle('Correlations in calcareous grassland data from all sites', fontsize=14)
-for i, var in enumerate(float_list2):
-    sns.regplot(data=df_bap, x='Number of species', y=var,
-        ax = ax[i])
-plt.savefig('./figures/cg_correlations2.png')
-exit()
+#vv = len(float_list2)
+#fig, ax = plt.subplots(ncols=vv, figsize=(12, 4), dpi=200)
+#fig.suptitle('Correlations in calcareous grassland data from all sites', fontsize=14)
+#for i, var in enumerate(float_list2):
+#    sns.regplot(data=df_bap, x='Number of species', y=var,
+#        ax = ax[i])
+#plt.savefig('./figures/cg_correlations2.png')
+
 for var in float_list:
     sns.lmplot(data=df_bap, x='freq_count', y=var, col='bap_broad',
         sharex=False)
     plt.show()
-exit()
+
 # finding the columns with numerical entries to compare
 float_list = [col for col in col_list if df[col].dtype == float]
 print('\nlist of float columns\n', float_list)

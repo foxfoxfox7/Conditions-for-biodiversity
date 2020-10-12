@@ -64,7 +64,7 @@ for link in a_tags:
                 open(f_name, 'wb').write(my_file.content)
                 file_ad_list.append(f_name)
 
-with open("file_list", "wb") as fp:
+with open("./data/file_list", "wb") as fp:
     pickle.dump(file_ad_list, fp)
 
 
