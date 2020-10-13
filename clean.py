@@ -16,20 +16,19 @@ def _get_list(df, list_names, not_list = []):
     Used so that exact names are needed in case of typos
     '''
 
-    strings = list_names
-    choose_cols = []
     df_columns = df.columns.tolist()
+    choose_col = []
     for col in df_columns:
-        for r_str in strings:
+        for r_str in list_names:
             if r_str.lower() in col.lower() :
-                choose_cols.append(col)
+                choose_col.append(col)
 
     # goes through each of the strings in not_list and looks for them in
     # the choose_cols
     for nl in not_list:
-        choose_cols = [ii for ii in choose_cols if nl.lower() not in ii.lower()]
+        choose_col = [ii for ii in choose_cols if nl.lower() not in ii.lower()]
 
-    return choose_cols
+    return choose_col
 
 ########################################################################
 # initial cleaning
@@ -44,7 +43,8 @@ def whole_clean(df):
     df = df.dropna(how='all', axis = 1)
     df = df.dropna(how='all', axis = 0)
     df = df.rename(columns=lambda x: x.strip())
-    # Make all the column titles lower case as there is variation amonst sites
+    # Make all the column titles lower case as there is variation amonst
+    # sites
     df.columns = df.columns.str.lower()
 
     # Some of the columns that are the same value have missing values
@@ -86,7 +86,8 @@ def whole_clean(df):
     # replaces blank strings with NaN ie ''
     df = df.replace(r'^\s*$', np.NaN, regex=True)
 
-    # strips leading and trailing spaces from any columns that have strings
+    # strips leading and trailing spaces from any columns that have
+    # strings
     df_obj = df.select_dtypes(['object'])
     df[df_obj.columns] = df_obj.apply(lambda x: x.str.strip())
 
@@ -113,9 +114,6 @@ def whole_clean(df):
 
     df = df.set_index('index_id')
 
-    # Make all the column titles lower case as there is variation amonst sites
-    #df.columns = df.columns.str.lower()
-
     return df
 
 def species_clean(df):
@@ -131,7 +129,8 @@ def species_clean(df):
     df = df.dropna(how='all', axis = 0)
     # strips leading and trailing spaces from the colum titles
     df = df.rename(columns=lambda x: x.strip())
-    # Make all the column titles lower case as there is variation amonst sites
+    # Make all the column titles lower case as there is variation amonst
+    # sites
     df.columns = df.columns.str.lower()
 
     # Some of the columns that are the same value have missing values
@@ -162,7 +161,7 @@ def species_clean(df):
 
     df = df[df['desc_latin'] != 'Unidentified']
 
-    remove_strings = ['data', 'comment', 'qa', 'cell', 'species_no']#'scode',
+    remove_strings = ['data', 'comment', 'qa', 'cell', 'species_no']
     remove_cols = _get_list(df, remove_strings)
     df = df.drop(remove_cols, axis = 1)
 
@@ -172,7 +171,7 @@ def species_clean(df):
             df.loc[i[0], 'percent_cover'] = np.NaN
     df['percent_cover'] = df['percent_cover'].astype(float)
 
-    # strips leading and trailing spaces from any columns that have strings
+    # strips leading, trailing spaces from any columns that have strings
     df_obj = df.select_dtypes(['object'])
     df[df_obj.columns] = df_obj.apply(lambda x: x.str.strip())
 
@@ -197,7 +196,7 @@ def species_clean(df):
     # drops any rows that have NaNs in them
     df = df.dropna()
 
-    # Make all the column titles lower case as there is variation amonst sites
+    # Make all col titles lower case as there is variation amonst sites
     df.columns = df.columns.str.lower()
 
     return df
@@ -213,7 +212,7 @@ def get_abund_and_freq(df, column):
     df_dict = {num: df.loc[df['index_id'] == num] for num in df['index_id']}
     cover_plots = []
     frequency_plots = []
-    # splitting the DF into one for each plot before transforming and combining
+    # split the DF into one for each plot, transforming and combining
     for key in df_dict.keys():
         df_dict[key] = df_dict[key].drop_duplicates(subset=[column],
                                                           keep='first')
@@ -248,7 +247,7 @@ def ground_clean(df):
     df = df.dropna(how='all', axis = 1)
     df = df.dropna(how='all', axis = 0)
     df = df.rename(columns=lambda x: x.strip())
-    # Make all the column titles lower case as there is variation amonst sites
+    # Make all col titles lower case as there is variation amonst sites
     df.columns = df.columns.str.lower()
 
     # Some of the columns that are the same value have missing values
@@ -272,19 +271,30 @@ def ground_clean(df):
     df['plot_id'] = df['plot_id'].str.strip()
     df['sitecode'] = df['sitecode'].str.strip()
 
+    # Creating a index id with year, site and plot so every single plot
+    # has its own index
     year_str = str(int(df['year'][0]))
     df['index_id'] = df['plot_id'] + '_' + df['sitecode'] + '_' + year_str
 
     # Some of the plots dont have frequency and only have percent cover,
-    # frequency values are typically about a quarter of the percent (out of 25)
+    # Changed it to be 9001 like below, so it sticks till the end of
+    # data wrangling and can be converted back to NaNs
+    # change to string it gets lost when summing in get_abund_and_freq
+    # changing it to NaN it gets converted to 0 later
     if 'frequency' not in df:
-        df['frequency'] = df['percent_cover'] / 4
+        df['frequency'] = 9001 #df['percent_cover'] / 4
         print('\n\nplot ' + str(df['sitecode'][0]) + str(df['year'][0])
          + ' with no frequency')
 
+    # replace blank cells with 9001 as they will need to be converted to
+    # nans after everything else is done. only a number will stick
+    zero_cols = _get_list(df, ['freq', 'cover'])
+    for col in zero_cols:
+        df[col] = df[col].fillna(9001)
+
     # taking the trailing and leading spaces from the features
     df['feature'] = df['feature'].apply(lambda x: x.strip())
-    # changing all feature labels to lower case to cover for discrepancies
+    # change all feature labels to lower case to cover for discrepancies
     df['feature'] = df['feature'].str.lower()
 
     # there is 1 veg height for each plot so is taken as the DF base
@@ -292,32 +302,21 @@ def ground_clean(df):
     # The other catagories need to be transformed into a pivot table
     df_other = df[df['feature'].str.lower() != 'vegetation height']
     # Function which generates pivot tables
-    # Used if there are multiple entries for each plot.1 plot should be 1 row
+    # Used if there are multiple entries for each plot.1 plot - 1 row
     g_cover, g_frequency = get_abund_and_freq(df_other, column='feature')
 
-    # Correcting typos and alt inputs in the cell columns
-    destring_cols = _get_list(df_height, ['cell'])
-    for col in destring_cols:
-        if df_height[col].dtype == object:
-            df_height[col] = df_height[col].replace({"<1m": 100.0,
-                                '>100': 100.0,
-                                 "*": np.NaN,
-                                 'xz': np.NaN,
-                                 'DW': np.NaN,
-                                 'dw': np.NaN,
-                                 '.': np.NaN,
-                                 '27.5.': 27.5,
-                                 '`13': 13.0,
-                                 '>55': 55.0,
-                                 'Tree': 100.0,
-                                 'Tree 1': 100.0,
-                                 '4..5': 4.5,
-                                 '7,5': 7.5,
-                                 'Hole': np.NaN})
-            df_height[col] = df_height[col].astype(float)
-        else:
-            pass
+    # Corrects for the files that don't have any height data. we still
+    # need the index if for merging
+    df_height['index_id'] = df['index_id']
 
+    # Some of the surveys have many cells replaced with '*'. This ruins
+    # the median and max calculations later on
+    zero_cols = _get_list(df_height, ['cell'])
+    for col in zero_cols:
+        try:
+            df_height[col] = df_height[col].replace({"*": np.NaN})
+        except:
+            pass
 
     # reducing the cell columsn to just a median and max height
     try:
@@ -329,19 +328,19 @@ def ground_clean(df):
         df_height['max_height'] = np.NaN
         df_height['median_height'] = np.NaN
 
-    # There are some plots that have multiple entries This drops al but the 1st
+    # some plots that have multiple entries This drops al but the 1st
     df_height = df_height[df_height.duplicated('index_id',
                                                         keep='first') == False]
 
-    # remove a load of useless columns. done late as 'cell' is needed before
+    # remove useless columns. done late as 'cell' is needed before
     remove_strings = ['percent', 'freq', 'data', 'cell', 'feature', 'site',
-        'code', 'year', 'qa']
+        'code', 'year', 'qa', 'plot_id']
     remove_cols = _get_list(df_height, remove_strings)
     df_height = df_height.drop(remove_cols, axis = 1)
 
-    # keeping only the essential information to add our transformed DFs to
+    # keeping the essential information to add our transformed DFs to
     df_base = pd.DataFrame()
-    base_strings = ['sitec', 'mcode', 'index']
+    base_strings = ['sitec', 'mcode', 'index', 'plot_id']
     base_cols = _get_list(df, base_strings)
     for col in base_cols:
         df_base[col] = df[col]
@@ -352,19 +351,24 @@ def ground_clean(df):
     df_base = df_base.set_index('index_id')
     df_height = df_height.set_index('index_id')
 
-    # labelling the column titles separately for when they need to be combined
+    # labelling col titles separately for when they need to be combined
     g_cover = g_cover.add_prefix('cover-')
     g_frequency = g_frequency.add_prefix('freq-')
 
     df_final = pd.concat((df_base, df_height, g_frequency, g_cover), axis = 1)
 
-    # Filling NaNs
-    median_cols = _get_list(df_final, ['height'])
-    for col in median_cols:
-        df_final[col] = df_final[col].fillna(df_final[col].median())
+    # These are columns where the row in the data is empty so it gives
+    # nan but it should be 0
     zero_cols = _get_list(df_final, ['freq', 'cover'])
     for col in zero_cols:
         df_final[col] = df_final[col].fillna(0)
+
+    # REplace the 9001s with nans as these shoudl be nans they are from
+    # cells which had no number but which should have one
+    # on certain surveys these can be replaced, on others they can't
+    for col in zero_cols:
+        a = df_final[col].values
+        df_final[col] = np.where(a > 9000, np.nan, a).tolist()
 
     return df_final
 
@@ -390,7 +394,8 @@ def replace_matches_in_column(df, column, string_to_match, min_ratio = 90):
                     limit=10, scorer=fuzzywuzzy.fuzz.token_sort_ratio)
 
     # only get matches with a ratio > 90
-    close_matches = [matches[0] for matches in matches if matches[1] >= min_ratio]
+    close_matches =\
+         [matches[0] for matches in matches if matches[1] >= min_ratio]
 
     # get the rows of all the close matches in our dataframe
     rows_with_matches = df[column].isin(close_matches)
@@ -407,7 +412,7 @@ def clean_bap_broad(df, lookup):
 
     col_list = df.columns.tolist()
 
-    # getting the columns whihc are of object type (to format the strings)
+    # getting the cols whihc are of object type (to format the strings)
     obj_list = [col for col in col_list if df[col].dtype == object]
     print('\nlist of object columns\n', obj_list)
 
@@ -419,11 +424,12 @@ def clean_bap_broad(df, lookup):
     baps = df['bap_broad'].unique()
     baps = [x for x in baps if str(x) != 'nan']
     print(len(baps), ' unique bap_broad habitats\n', sorted(baps))
-    # checking if any of them have names that are similat in case of typo
+    # check if any of them have names that are similat in case of typo
     check_names(baps, min_ratio = 80)
 
     # from the dictionary, looking at the proper names for bap_broad
-    print(len(lookup['bap_broad']), ' lookup bap_broad\n', sorted(lookup['bap_broad']))
+    print(len(lookup['bap_broad']),
+     ' lookup bap_broad\n', sorted(lookup['bap_broad']))
 
     # These are the names which have typos which need to be replaced
     replace_matches_in_column(df, 'bap_broad', 'supralittoral sediment')
@@ -453,7 +459,7 @@ def clean_nvc(df):
     for i in df['nvc_first'].iteritems():
         df.loc[i[0], 'nvc_first'] = re.sub(r'\D+$', '', i[1])
 
-    # Then split into jus the numbers and letters seperately for nvc analasi
+    # Then split into the nums and letters seperately for nvc analysis
     df['nvc_num'] = df['nvc_first']
     for i in df['nvc_num'].iteritems():
         df.loc[i[0], 'nvc_num'] = re.sub(r'(^[^\d]+)', '', i[1])
@@ -528,6 +534,7 @@ def whole_to_ml(df):
     for col in restring_cols:
         df[col] = whole2[col]
 
+    # These may have useful info so we create dummy cols (0 or 1)
     dummies_strings = ['code', 'bap']#, 'strat'
     dummies_cols = _get_list(df, dummies_strings)
     dummies = []

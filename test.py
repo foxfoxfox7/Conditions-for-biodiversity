@@ -55,8 +55,8 @@ print(ground.head())
 # Getting all survery data
 #######################################################################
 
-for nn, ss in enumerate(surveys[11:12]):
-    print('\n\n\n', nn, '\n\n\n', ss, '\n\n\n')
+for nn, ss in enumerate(surveys[64:]):
+    print('\n\n', nn, '\n', ss, '\n\n')
     xls = pd.ExcelFile(ss)
 
 
@@ -68,14 +68,9 @@ for nn, ss in enumerate(surveys[11:12]):
         if 'ground' in name.lower():
             ground_string = name
 
-    whole = xls.parse(wpd_string)
-    whole = clean.whole_clean(whole)
-    print(whole['year'][0])
-    if 'light' in whole.columns:
-        print(whole['light'][0])
+    #whole = xls.parse(wpd_string)
+    #whole = clean.whole_clean(whole)
 
-    print(whole.info())
-    print(whole.head(6))
     #print('\nwhole\n')
     #print(whole.head())
     #whole = clean.whole_to_ml(whole)
@@ -90,7 +85,7 @@ for nn, ss in enumerate(surveys[11:12]):
     #print('\nfrequency\n')
     #print(frequency.head())
 
-    #ground = xls.parse(ground_string)
-    #ground = clean.ground_clean(ground)
+    ground = xls.parse(ground_string)
+    ground = clean.ground_clean(ground)
     #print('\nground\n')
-    #print(ground.head())
+    print(ground.head(50))

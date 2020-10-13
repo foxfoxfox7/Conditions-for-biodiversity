@@ -12,7 +12,7 @@ Across the UK, there are a large number of Sites of Special Scientific Interest 
 
 ### Aims for this project
 
-##### Code to clean a variety of surveys and formulate them into a consistent form
+##### [Code to clean a variety of surveys and formulate them into a consistent form](./clean.py)
 
 The data collected is from a huge number of workers across a large timespan and as such there are many discrepancies across each plot, survey, site. In addition to this there are many typos, erroneously input data and spelling mistakes. In addition it was collected by people who were not experienced with handling data and so is not in a form ready for analysis. Most importantly though, no-one on the Natural England LTMN team knew how to code, so this would be an incredibly laborious process in excel for them. I realised that probably the single most useful thing I could do would be to write a suite of programs that could take in any survey data, clean it without specific modifications for each survey and present it in a consistent form.
 
