@@ -37,7 +37,8 @@ html_doc = requests.get(list_of_sites).text
 soup = BeautifulSoup(html_doc)
 
 file_ad_list = []
-os.mkdir('data')
+data_dir = './Data/'
+os.mkdir(data_dir)
 
 # Find all 'a' tags (which define hyperlinks)
 a_tags = soup.find_all('a')
@@ -48,7 +49,7 @@ for link in a_tags:
         site_html = requests.get(site_url).text
         site_soup = BeautifulSoup(site_html)
 
-        dir_name = 'data/' + directory_name(str(site_soup.title))
+        dir_name = data_dir + directory_name(str(site_soup.title))
         os.mkdir(dir_name)
         print('\n', dir_name, '\n')
 
@@ -64,7 +65,7 @@ for link in a_tags:
                 open(f_name, 'wb').write(my_file.content)
                 file_ad_list.append(f_name)
 
-with open("./data/file_list", "wb") as fp:
+with open(data_dir + "/file_list", "wb") as fp:
     pickle.dump(file_ad_list, fp)
 
 
