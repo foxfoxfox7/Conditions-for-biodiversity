@@ -1,6 +1,6 @@
 # Conditions-for-biodiversity
 
-## [Link to the report](./Lullington/report/Lullington_Heath_report2.pdf)
+## [Link to the report](./Lullington_Heath_report2.pdf)
 
 ### How I started this project
 
@@ -14,7 +14,7 @@ Across the UK, there are a large number of Sites of Special Scientific Interest 
 
 ### Aims for this project
 
-##### [Code to clean a variety of surveys and formulate them into a consistent form](./clean.py)
+##### Code to clean a variety of surveys and formulate them into a consistent form
 
 The data collected is from a huge number of workers across a large timespan and as such there are many discrepancies across each plot, survey, site. In addition to this there are many typos, erroneously input data and spelling mistakes. In addition it was collected by people who were not experienced with handling data and so is not in a form ready for analysis. Most importantly though, no-one on the Natural England LTMN team knew how to code, so this would be an incredibly laborious process in excel for them. I realised that probably the single most useful thing I could do would be to write a suite of programs that could take in any survey data, clean it without specific modifications for each survey and present it in a consistent form.
 
@@ -22,7 +22,7 @@ The data collected is from a huge number of workers across a large timespan and 
 
 The team were previously using excel to write reports on individual surveys, with over 80 sites and many surveys for each this was slow progress and the vast majority of sites had no data analysis done. I wrote code as general as possible to generate tables of pertinent data and figures which could be used to fast-track report writing for the team.
 
-##### [Write a report on the changing ecosystem of a site using the LTMN data](./Lullington/report/Lullington_Heath_report2.pdf)
+##### [Write a report on the changing ecosystem of a site using the LTMN data](./Lullington_Heath_report2.pdf)
 
 I proposed writing a report on a local site because I wanted to finally turn this wealth of data into something useful for the organisation. I contacted the site manager at Lullington Heath and told them about my work with LTMN. They were very interested and we held a meeting to discuss would would be most useful. The resulting report was given a week later and has since been used to make changes to the way Lullington Heath is managed.
 
